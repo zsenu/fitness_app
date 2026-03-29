@@ -2,6 +2,7 @@ django
 djangorestframework
 django-cors-headers
 djangorestframework-simplejwt
+dj-database-url
 gunicorn
 psycopg2-binary
 python-dotenv
