@@ -3,6 +3,15 @@ from rest_framework             import serializers
 
 from django.contrib.auth.models import User
 from .models                    import UserProfile
+from .models                    import HealthLog
+from .models                    import FoodItem
+from .models                    import FoodLog
+from .models                    import StrengthExercise
+from .models                    import StrengthSet
+from .models                    import StrengthTraining
+from .models                    import CardioExercise
+from .models                    import CardioSet
+from .models                    import CardioTraining
 
 """
 User-related serializers
@@ -82,3 +91,76 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'user_id', 'username', 'email', 'id',
             'gender', 'birth_date', 'height'
         ]
+
+# NEEDS IMPLEMENTATION
+class HealthLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = HealthLog
+        fields = '__all__'
+
+"""
+Food-related serializers
+"""
+class FoodItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = FoodItem
+        fields = '__all__'
+
+    def validate(self, data):
+        instance = getattr(self, 'instance', None)
+
+        fat           = data.get('fat',           instance.fat           if instance else None)
+        carbohydrates = data.get('carbohydrates', instance.carbohydrates if instance else None)
+        protein       = data.get('protein',       instance.protein       if instance else None)
+
+        if None not in (fat, carbohydrates, protein):
+            if fat + carbohydrates + protein > 100:
+                raise serializers.ValidationError("Total macronutrients cannot exceed 100 grams.")
+        return data
+
+# NEEDS IMPLEMENTATION
+class FoodLogSerializer(serializers.Modelserializer):
+    class Meta:
+        model  = FoodLog
+        fields = '__all__'
+
+"""
+Strength-related serializers
+"""
+class StrengthExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = StrengthExercise
+        fields = '__all__'
+
+# NEEDS IMPLEMENTATION
+class StrengthSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = StrengthSet
+        fields = '__all__'
+
+# NEEDS IMPLEMENTATION
+class StrengthTrainingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = StrengthTraining
+        fields = '__all__'
+
+"""
+Cardio-related serializers
+"""
+
+class CardioExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = CardioExercise
+        fields = '__all__'
+
+# NEEDS IMPLEMENTATION
+class CardioSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = CardioSet
+        fields = '__all__'
+
+# NEEDS IMPLEMENTATION
+class CardioTrainingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = CardioTraining
+        fields = '__all__'
