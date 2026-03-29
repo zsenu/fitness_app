@@ -95,7 +95,7 @@ class StrengthExercise(StripTagsMixin, models.Model):
     target_muscle_groups = models.JSONField(default = list)
 
     def clean(self):
-        super.clean()
+        super().clean()
 
         target_muscle_groups_to_validate = self.target_muscle_groups
         
