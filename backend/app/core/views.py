@@ -40,3 +40,102 @@ class UserProfileView(APIView):
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
+
+"""
+Food-related views
+"""
+class FoodItemListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        food_items = FoodItem.objects.all()
+        serializer = FoodItemSerializer(food_items, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = FoodItemSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
+class FoodItemDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return FoodItem.objects.get(pk = pk)
+        except FoodItem.DoesNotExist:
+            return None
+    
+    def get(self, request, pk):
+        food_item = self.get_object(pk)
+        if not food_item:
+            return Response({"detail": "Food item not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = FoodItemSerializer(food_item)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+"""
+Strength-related views
+"""
+class StrengthExerciseListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        strength_exercises = StrengthExercise.objects.all()
+        serializer = StrengthExerciseSerializer(strength_exercises, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = StrengthExerciseSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
+class StrengthExerciseDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk):
+        try:
+            return StrengthExercise.objects.get(pk = pk)
+        except StrengthExercise.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        exercise = self.get_object(pk)
+        if not exercise:
+            return Response({"detail": "Strength exercise not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = StrengthExerciseSerializer(exercise)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+"""
+Cardio-related views
+"""
+class CardioExerciseListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cardio_exercises = CardioExercise.objects.all()
+        serializer = CardioExerciseSerializer(cardio_exercises, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = CardioExerciseSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
+class CardioExerciseDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk):
+        try:
+            return CardioExercise.objects.get(pk = pk)
+        except CardioExercise.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        exercise = self.get_object(pk)
+        if not exercise:
+            return Response({"detail": "Cardio exercise not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = CardioExerciseSerializer(exercise)
+        return Response(serializer.data, status = status.HTTP_200_OK)
