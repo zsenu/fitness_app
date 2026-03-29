@@ -132,17 +132,29 @@ class StrengthExerciseSerializer(serializers.ModelSerializer):
         model  = StrengthExercise
         fields = '__all__'
 
-# NEEDS IMPLEMENTATION
 class StrengthSetSerializer(serializers.ModelSerializer):
+    exercise = StrengthExerciseSerializer(read_only = True)
+    exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset = StrengthExercise.objects.all(),
+        source = 'exercise',
+        write_only = True
+    )
+    training_id = serializers.PrimaryKeyRelatedField(
+        queryset = StrengthTraining.objects.all(),
+        source = 'training'
+    )
+
     class Meta:
         model  = StrengthSet
-        fields = '__all__'
+        fields = ['id', 'training_id', 'exercise', 'exercise_id', 'weight', 'reps', 'comment']
 
-# NEEDS IMPLEMENTATION
 class StrengthTrainingSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    sets = StrengthSetSerializer(many = True, read_only = True)
+
     class Meta:
         model  = StrengthTraining
-        fields = '__all__'
+        fields = ['id', 'user', 'date', 'sets']
 
 """
 Cardio-related serializers

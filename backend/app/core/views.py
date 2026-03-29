@@ -6,13 +6,21 @@ from rest_framework.response    import Response
 
 from .models                    import FoodItem
 from .models                    import StrengthExercise
+from .models                    import StrengthSet
+from .models                    import StrengthTraining
 from .models                    import CardioExercise
+from .models                    import CardioSet
+from .models                    import CardioTraining
 
 from .serializers               import RegisterSerializer
 from .serializers               import UserProfileSerializer
 from .serializers               import FoodItemSerializer
 from .serializers               import StrengthExerciseSerializer
+from .serializers               import StrengthSetSerializer
+from .serializers               import StrengthTrainingSerializer
 from .serializers               import CardioExerciseSerializer
+from .serializers               import CardioSetSerializer
+from .serializers               import CardioTrainingSerializer
 
 """
 View for health endpoint
@@ -114,6 +122,103 @@ class StrengthExerciseDetailView(APIView):
         serializer = StrengthExerciseSerializer(exercise)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+class StrengthSetListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, training_id):
+        sets = StrengthSet.objects.filter(training__id = training_id, training__user = request.user)
+        serializer = StrengthSetSerializer(sets, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request, training_id):
+        try:
+            training = StrengthTraining.objects.get(id = training_id, user = request.user)
+        except StrengthTraining.DoesNotExist:
+            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
+        
+        serializer = StrengthSetSerializer(data = request.data, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save(training = training)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+    
+class StrengthSetDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk, user):
+        try:
+            return StrengthSet.objects.get(pk = pk, training__user = user)
+        except StrengthSet.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        strength_set = self.get_object(pk, request.user)
+        if not strength_set:
+            return Response({"detail": "Strength set not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = StrengthSetSerializer(strength_set)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def patch(self, request, pk):
+        strength_set = self.get_object(pk, request.user)
+        if not strength_set:
+            return Response({"detail": "Strength set not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = StrengthSetSerializer(strength_set, data = request.data, partial = True, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        strength_set = self.get_object(pk, request.user)
+        if not strength_set:
+            return Response({"detail": "Strength set not found."}, status = status.HTTP_404_NOT_FOUND)
+        strength_set.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class StrengthTrainingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        trainings  = StrengthTraining.objects.filter(user = request.user)
+        serializer = StrengthTrainingSerializer(trainings, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = StrengthTrainingSerializer(data = request.data, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save(user = request.user)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
+class StrengthTrainingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk, user):
+        try:
+            return StrengthTraining.objects.get(pk = pk, user = user)
+        except StrengthTraining.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = StrengthTrainingSerializer(training)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def patch(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = StrengthTrainingSerializer(training, data = request.data, partial = True, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
+        training.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
 """
 Cardio-related views
 """
@@ -146,3 +251,19 @@ class CardioExerciseDetailView(APIView):
             return Response({"detail": "Cardio exercise not found."}, status = status.HTTP_404_NOT_FOUND)
         serializer = CardioExerciseSerializer(exercise)
         return Response(serializer.data, status = status.HTTP_200_OK)
+
+# NEEDS IMPLEMENTATION
+class CardioSetListView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class CardioSetDetailView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class CardioTrainingListView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class CardioTrainingDetailView(APIView):
+    pass
