@@ -119,7 +119,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
         return data
 
 # NEEDS IMPLEMENTATION
-class FoodLogSerializer(serializers.Modelserializer):
+class FoodLogSerializer(serializers.ModelSerializer):
     class Meta:
         model  = FoodLog
         fields = '__all__'
