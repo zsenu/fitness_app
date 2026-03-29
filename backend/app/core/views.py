@@ -252,18 +252,99 @@ class CardioExerciseDetailView(APIView):
         serializer = CardioExerciseSerializer(exercise)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
-# NEEDS IMPLEMENTATION
 class CardioSetListView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
 
-# NEEDS IMPLEMENTATION
+    def get(self, request, training_id):
+        sets = CardioSet.objects.filter(training__id = training_id, training__user = request.user)
+        serializer = CardioSetSerializer(sets, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request, training_id):
+        try:
+            training = CardioTraining.objects.get(id = training_id, user = request.user)
+        except CardioTraining.DoesNotExist:
+            return Response({"detail": "Cardio training not found."}, status = status.HTTP_404_NOT_FOUND)
+        
+        serializer = CardioSetSerializer(data = request.data, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save(training = training)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
 class CardioSetDetailView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
 
-# NEEDS IMPLEMENTATION
+    def get_object(self, pk, user):
+        try:
+            return CardioSet.objects.get(pk = pk, training__user = user)
+        except CardioSet.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        cardio_set = self.get_object(pk, request.user)
+        if not cardio_set:
+            return Response({"detail": "Cardio set not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = CardioSetSerializer(cardio_set)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def patch(self, request, pk):
+        cardio_set = self.get_object(pk, request.user)
+        if not cardio_set:
+            return Response({"detail": "Cardio set not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = CardioSetSerializer(cardio_set, data = request.data, partial = True, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        cardio_set = self.get_object(pk, request.user)
+        if not cardio_set:
+            return Response({"detail": "Cardio set not found."}, status = status.HTTP_404_NOT_FOUND)
+        cardio_set.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
 class CardioTrainingListView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
 
-# NEEDS IMPLEMENTATION
+    def get(self, request):
+        trainings  = CardioTraining.objects.filter(user = request.user)
+        serializer = CardioTrainingSerializer(trainings, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = CardioTrainingSerializer(data = request.data, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save(user = request.user)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
 class CardioTrainingDetailView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk, user):
+        try:
+            return CardioTraining.objects.get(pk = pk, user = user)
+        except CardioTraining.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Cardio training not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = CardioTrainingSerializer(training)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def patch(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Cardio training not found."}, status = status.HTTP_404_NOT_FOUND)
+        serializer = CardioTrainingSerializer(training, data = request.data, partial = True, context = {'request': request})
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        training = self.get_object(pk, request.user)
+        if not training:
+            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
+        training.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)

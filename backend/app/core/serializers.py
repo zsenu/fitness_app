@@ -139,14 +139,13 @@ class StrengthSetSerializer(serializers.ModelSerializer):
         source = 'exercise',
         write_only = True
     )
-    training_id = serializers.PrimaryKeyRelatedField(
-        queryset = StrengthTraining.objects.all(),
-        source = 'training'
-    )
 
     class Meta:
         model  = StrengthSet
-        fields = ['id', 'training_id', 'exercise', 'exercise_id', 'weight', 'reps', 'comment']
+        fields = [
+            'id', 'training_id', 'exercise',
+            'exercise_id', 'weight', 'reps', 'comment'
+        ]
 
 class StrengthTrainingSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())
@@ -165,14 +164,25 @@ class CardioExerciseSerializer(serializers.ModelSerializer):
         model  = CardioExercise
         fields = '__all__'
 
-# NEEDS IMPLEMENTATION
 class CardioSetSerializer(serializers.ModelSerializer):
+    exercise = CardioExerciseSerializer(read_only = True)
+    exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset = CardioExercise.objects.all(),
+        source = 'exercise',
+        write_only = True
+    )
+
     class Meta:
         model  = CardioSet
-        fields = '__all__'
+        fields = [
+            'id', 'training_id', 'exercise',
+            'exercise_id', 'duration_minutes', 'comment'
+        ]
 
-# NEEDS IMPLEMENTATION
 class CardioTrainingSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    sets = CardioSetSerializer(many = True, read_only = True)
+
     class Meta:
         model  = CardioTraining
-        fields = '__all__'
+        fields = ['id', 'user', 'date', 'sets']
