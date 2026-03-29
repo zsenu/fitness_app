@@ -14,6 +14,9 @@ from .serializers               import FoodItemSerializer
 from .serializers               import StrengthExerciseSerializer
 from .serializers               import CardioExerciseSerializer
 
+"""
+View for health endpoint
+"""
 class HealthCheckView(APIView):
     def get(self, request):
         return Response({"status": "ok"}, status = status.HTTP_200_OK)

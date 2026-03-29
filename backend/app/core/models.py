@@ -2,11 +2,43 @@ from django.db                  import models
 from django.core.validators     import MinValueValidator, MaxValueValidator
 from django.core.exceptions     import ValidationError
 from django.contrib.auth.models import User
+from django.utils.html          import strip_tags
+
+"""
+Models implementing from this model will automatically sanitize user input on every relevant field
+"""
+class StripTagsMixin(models.Model):
+    class Meta:
+        abstract = True
+
+    def clean(self):
+        super().clean()
+        for field in self._meta.get_fields():
+            value = getattr(self, field.name, None)
+
+            if value is None:
+                continue
+
+            if isinstance(field, (models.CharField, models.TextField)):
+                setattr(self, field.name, strip_tags(value))
+
+            elif isinstance(field, models.JSONField):
+                setattr(self, field.name, self._sanitize_json(value))
+
+    def _sanitize_json(self, value):
+        if isinstance(value, str):
+            return strip_tags(value)
+        elif isinstance(value, list):
+            return [self._sanitize_json(item) for item in value]
+        elif isinstance(value, dict):
+            return {key: self._sanitize_json(val) for key, val in value.items()}
+        else:
+            return value
 
 """
 UserProfile is an extension of the standard User model provided by Django
 """
-class UserProfile(models.Model):
+class UserProfile(StripTagsMixin, models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),
         ('F', 'Female'),
@@ -33,7 +65,7 @@ class HealthLog(models.Model):
 """
 Models related to food entries
 """
-class FoodItem(models.Model):
+class FoodItem(StripTagsMixin, models.Model):
     name          =  models.CharField(max_length = 255, unique = True)
     description   =  models.CharField(max_length = 255, blank = True)
     calories      = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(2000)])
@@ -51,7 +83,7 @@ class FoodLog(models.Model):
 """
 Models related to strength training
 """
-class StrengthExercise(models.Model):
+class StrengthExercise(StripTagsMixin, models.Model):
     ALLOWED_MUSCLE_GROUPS = [
         'chest', 'back', 'abdominals',
         'shoulders', 'biceps', 'triceps',
@@ -90,7 +122,7 @@ class StrengthTraining(models.Model):
     def __str__(self):
         return f'Strength training for {self.user.username} on {self.date}'
 
-class StrengthSet(models.Model):
+class StrengthSet(StripTagsMixin, models.Model):
     training =   models.ForeignKey(StrengthTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise =   models.ForeignKey(StrengthExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
     weight   =   models.FloatField(validators = [MinValueValidator(0.1)])
@@ -103,7 +135,7 @@ class StrengthSet(models.Model):
 """
 Models related to cardio training
 """
-class CardioExercise(models.Model):
+class CardioExercise(StripTagsMixin, models.Model):
     name                =  models.CharField(max_length = 255, unique = True)
     description         =  models.CharField(max_length = 255, blank = True)
     calories_per_minute = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(50)])
@@ -121,7 +153,7 @@ class CardioTraining(models.Model):
     def __str__(self):
         return f'Cardio training for {self.user.username} on {self.date}'
 
-class CardioSet(models.Model):
+class CardioSet(StripTagsMixin, models.Model):
     training = models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise = models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
     duration = models.IntegerField(validators = [MinValueValidator(1)])
