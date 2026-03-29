@@ -1,5 +1,6 @@
 from django.contrib                 import admin
 from django.urls                    import path
+from core.views                     import HealthCheckView
 from core.views                     import RegisterView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from core.views                     import UserProfileView
@@ -11,6 +12,8 @@ from core.views                     import CardioExerciseListView
 from core.views                     import CardioExerciseDetailView
 
 urlpatterns = [
+    path('health/', HealthCheckView.as_view(), name = 'health-check'),
+
     path('admin/', admin.site.urls),
 
     path('api/auth/register/',       RegisterView.as_view()),
