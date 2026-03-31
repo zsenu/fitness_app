@@ -57,6 +57,10 @@ class UserProfileView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
 
 """
+Health-related views
+"""
+
+"""
 Food-related views
 """
 class FoodItemListView(APIView):

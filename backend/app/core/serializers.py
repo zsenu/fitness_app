@@ -17,48 +17,23 @@ from .models                    import CardioTraining
 User-related serializers
 """
 class RegisterSerializer(serializers.ModelSerializer):
-    username       =    serializers.CharField()
-    email          =   serializers.EmailField()
-    password       =    serializers.CharField(write_only = True)
-    gender         =  serializers.ChoiceField(choices = UserProfile.GENDER_CHOICES)
-    birth_date     =    serializers.DateField()
-    height         = serializers.IntegerField()
-    current_weight =   serializers.FloatField()
-    target_weight  =   serializers.FloatField()
-    target_date    =    serializers.DateField()
-
     class Meta:
         model  = User
         fields = [
-            'username',
-            'email',
-            'password',
-            'gender',
-            'birth_date',
-            'height',
-            'current_weight',
-            'target_weight',
-            'target_date',
+            'username', 'email', 'password',
+            'gender', 'birth_date', 'height',
+            'starting_weight', 'target_weight', 'target_date'
         ]
         extra_kwargs = {
             'password': {'write_only': True}
         }
-    
-    def validate_birth_date(self, value):
-        if value > date(date.today().year - 18, date.today().month, date.today().day):
-            raise serializers.ValidationError("User must be at least 18 years old.")
-        return value
 
     def create(self, validated_data):
         profile_data = {
             key: validated_data.pop(key)
             for key in [
-                'gender',
-                'birth_date',
-                'height',
-                'current_weight',
-                'target_weight',
-                'target_date',
+                'gender', 'birth_date', 'height',
+                'starting_weight', 'target_weight', 'target_date'
             ]
         }
 
@@ -69,53 +44,84 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         UserProfile.objects.create(user = user, **profile_data)
-
         return user
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    username       =    serializers.CharField(source = 'user.username', read_only = True)
-    email          =    serializers.CharField(source = 'user.email',    read_only = True)
-    user_id        = serializers.IntegerField(source = 'user.id',       read_only = True)
-    current_weight =   serializers.FloatField()
-    target_weight  =   serializers.FloatField()
-    target_date    =    serializers.DateField()
+    user_id        =          serializers.IntegerField(source = 'user.id',       read_only = True)
+    username       =             serializers.CharField(source = 'user.username', read_only = True)
+    email          =             serializers.CharField(source = 'user.email',    read_only = True)
+    current_weight = serializers.SerializerMethodField()
+
+    def get_current_weight(self, obj):
+        latest_log = obj.user.health_logs.filter(measured_weight__isnull = False).first()
+        return latest_log.measured_weight if latest_log else obj.starting_weight
 
     class Meta:
         model  = UserProfile
         fields = [
             'user_id', 'username', 'email',
             'gender', 'birth_date', 'height',
-            'current_weight', 'target_weight', 'target_date'
+            'starting_weight', 'current_weight', 'target_weight', 'target_date'
         ]
         read_only_fields = [
             'user_id', 'username', 'email', 'id',
             'gender', 'birth_date', 'height'
         ]
 
+"""
+Health-related serializers
+"""
 # NEEDS IMPLEMENTATION
 class HealthLogSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    
     class Meta:
         model  = HealthLog
-        fields = '__all__'
+        fields = [
+            'id', 'user', 'date',
+            'measured_weight', 'sleep_hours', 'consumed_liquid_liters'
+        ]
+        read_only_fields = [
+            'id', 'user'
+        ]
 
+    def validate_date(self, value):
+        if value > date.today():
+            raise serializers.ValidationError('Date cannot be in the future.')
+        return value
+    
+    def validate(self, data):
+        instance = getattr(self, 'instance', None)
+
+        measured_weight        = data.get('measured_weight',        instance.measured_weight        if instance else None)
+        sleep_hours            = data.get('sleep_hours',            instance.sleep_hours            if instance else None)
+        consumed_liquid_liters = data.get('consumed_liquid_liters', instance.consumed_liquid_liters if instance else None)
+
+        if not any([
+            measured_weight        is not None,
+            sleep_hours            is not None,
+            consumed_liquid_liters is not None
+        ]):
+            raise serializers.ValidationError('At least one health metric must be provided.')
+        return data 
 """
 Food-related serializers
 """
 class FoodItemSerializer(serializers.ModelSerializer):
     class Meta:
         model  = FoodItem
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'description',
+            'calories', 'fat', 'carbohydrates', 'protein'
+        ]
 
     def validate(self, data):
-        instance = getattr(self, 'instance', None)
+        fat           = data.get('fat')
+        carbohydrates = data.get('carbohydrates')
+        protein       = data.get('protein')
 
-        fat           = data.get('fat',           instance.fat           if instance else None)
-        carbohydrates = data.get('carbohydrates', instance.carbohydrates if instance else None)
-        protein       = data.get('protein',       instance.protein       if instance else None)
-
-        if None not in (fat, carbohydrates, protein):
-            if fat + carbohydrates + protein > 100:
-                raise serializers.ValidationError("Total macronutrients cannot exceed 100 grams.")
+        if fat + carbohydrates + protein > 100:
+            raise serializers.ValidationError("Total macronutrients cannot exceed 100 grams.")
         return data
 
 # NEEDS IMPLEMENTATION
@@ -130,7 +136,10 @@ Strength-related serializers
 class StrengthExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model  = StrengthExercise
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'description',
+            'target_muscle_groups'
+        ]
 
 class StrengthSetSerializer(serializers.ModelSerializer):
     exercise = StrengthExerciseSerializer(read_only = True)
@@ -153,7 +162,9 @@ class StrengthTrainingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = StrengthTraining
-        fields = ['id', 'user', 'date', 'sets']
+        fields = [
+            'id', 'user', 'date', 'sets'
+        ]
 
 """
 Cardio-related serializers
@@ -162,7 +173,10 @@ Cardio-related serializers
 class CardioExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model  = CardioExercise
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'description',
+            'calories_burned_per_minute'
+        ]
 
 class CardioSetSerializer(serializers.ModelSerializer):
     exercise = CardioExerciseSerializer(read_only = True)
@@ -185,4 +199,6 @@ class CardioTrainingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = CardioTraining
-        fields = ['id', 'user', 'date', 'sets']
+        fields = [
+            'id', 'user', 'date', 'sets'
+        ]
