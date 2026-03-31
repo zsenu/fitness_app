@@ -9,6 +9,27 @@ from core.models                    import StrengthExercise, StrengthSet, Streng
 from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
 """
+Abstract serializers to apply certain behaviors
+"""
+class RelatedToUserSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+
+    class Meta:
+        abstract = True
+
+class FullCleanSerializer(serializers.ModelSerializer):
+    class Meta:
+        abstract = True
+
+    def validate(self, attrs):
+        model_class = self.Meta.model
+        instance = model_class(**attrs)
+        if getattr(self, 'instance', None):
+            instance.pk = self.instance.pk
+        instance.full_clean()
+        return attrs
+
+"""
 User-related serializers
 """
 class RegisterSerializer(serializers.ModelSerializer):
@@ -53,7 +74,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         UserProfile.objects.create(user = user, **profile_data)
         return user
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(FullCleanSerializer, serializers.ModelSerializer):
     user_id        =          serializers.IntegerField(source = 'user.id',       read_only = True)
     username       =             serializers.CharField(source = 'user.username', read_only = True)
     email          =             serializers.CharField(source = 'user.email',    read_only = True)
@@ -74,18 +95,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'user_id', 'username', 'email', 'id',
             'gender', 'birth_date', 'height'
         ]
-    
-    def validate(self, attrs):
-        instance = UserProfile(**attrs)
-        instance.full_clean()
-        return attrs
 
 """
 Health-related serializers
 """
-class HealthLogSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
-    
+class HealthLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = HealthLog
         fields = [
@@ -93,15 +107,10 @@ class HealthLogSerializer(serializers.ModelSerializer):
             'bodyweight', 'hours_slept', 'liquid_consumed'
         ]
 
-    def validate(self, attrs):
-        instance = HealthLog(**attrs)
-        instance.full_clean()
-        return attrs
-
 """
 Food-related serializers
 """
-class FoodItemSerializer(serializers.ModelSerializer):
+class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = FoodItem
         fields = [
@@ -109,27 +118,50 @@ class FoodItemSerializer(serializers.ModelSerializer):
             'calories', 'fat', 'carbohydrates', 'protein'
         ]
 
-    def validate(self, attrs):
-        instance = FoodItem(**attrs)
-        instance.full_clean()
-        return attrs
-
-# NEEDS IMPLEMENTATION
-class FoodLogSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = FoodLog
-        fields = '__all__'
-
-# NEEDS IMPLEMENTATION
-class FoodEntrySerializer(serializers.ModelSerializer):
+# NEEDS IMPLEMENTATION (?)
+class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = FoodEntry
-        fields = '__all__'
+        fields = [
+            'id', 'meal_type',
+            'food_item', 'quantity', 'comment'
+        ]
+
+# NEEDS IMPLEMENTATION (?)
+class FoodLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
+    entries          = FoodEntrySerializer(many = True, read_only = True)
+    breakfast_macros = serializers.SerializerMethodField()
+    lunch_macros     = serializers.SerializerMethodField()
+    dinner_macros    = serializers.SerializerMethodField()
+    misc_macros      = serializers.SerializerMethodField()
+    total_macros     = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = FoodLog
+        fields = [
+            'id', 'user', 'date', 'entries',
+            'breakfast_macros', 'lunch_macros', 'dinner_macros', 'misc_macros', 'total_macros'
+        ]
+
+    def get_breakfast_macros(self, obj):
+        return obj.breakfast_macros
+    
+    def get_lunch_macros(self, obj):
+        return obj.lunch_macros
+    
+    def get_dinner_macros(self, obj):
+        return obj.dinner_macros
+    
+    def get_misc_macros(self, obj):
+        return obj.misc_macros
+    
+    def get_total_macros(self, obj):
+        return obj.total_macros
 
 """
 Strength-related serializers
 """
-class StrengthExerciseSerializer(serializers.ModelSerializer):
+class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = StrengthExercise
         fields = [
@@ -137,12 +169,7 @@ class StrengthExerciseSerializer(serializers.ModelSerializer):
             'target_muscle_groups'
         ]
 
-    def validate(self, attrs):
-        instance = StrengthExercise(**attrs)
-        instance.full_clean()
-        return attrs
-
-class StrengthSetSerializer(serializers.ModelSerializer):
+class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
     exercise = StrengthExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = StrengthExercise.objects.all(),
@@ -157,13 +184,7 @@ class StrengthSetSerializer(serializers.ModelSerializer):
             'exercise_id', 'weight', 'reps', 'comment'
         ]
 
-    def validate(self, attrs):
-        instance = StrengthSet(**attrs)
-        instance.full_clean()
-        return attrs
-
-class StrengthTrainingSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
     sets = StrengthSetSerializer(many = True, read_only = True)
 
     class Meta:
@@ -176,20 +197,15 @@ class StrengthTrainingSerializer(serializers.ModelSerializer):
 Cardio-related serializers
 """
 
-class CardioExerciseSerializer(serializers.ModelSerializer):
+class CardioExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = CardioExercise
         fields = [
             'id', 'name', 'description',
             'calories_burned_per_minute'
         ]
-    
-    def validate(self, attrs):
-        instance = CardioExercise(**attrs)
-        instance.full_clean()
-        return attrs
 
-class CardioSetSerializer(serializers.ModelSerializer):
+class CardioSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
     exercise = CardioExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = CardioExercise.objects.all(),
@@ -204,13 +220,7 @@ class CardioSetSerializer(serializers.ModelSerializer):
             'exercise_id', 'duration_minutes', 'comment'
         ]
 
-    def validate(self, attrs):
-        instance = CardioSet(**attrs)
-        instance.full_clean()
-        return attrs
-
-class CardioTrainingSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+class CardioTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
     sets = CardioSetSerializer(many = True, read_only = True)
 
     class Meta:

@@ -15,6 +15,7 @@ class StripTagsMixin(models.Model):
 
     def clean(self):
         super().clean()
+
         for field in self._meta.get_fields():
             value = getattr(self, field.name, None)
 
@@ -44,6 +45,40 @@ class FullCleanMixin(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+class BaseLogMixin(models.Model):
+    user = models.ForeignKey(User, on_delete = models.CASCADE)
+    date =  models.DateField()
+
+    class Meta:
+        abstract    = True
+        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'unique_user_date')]
+        ordering    = ['-date']
+
+    @property
+    def is_empty(self):
+        raise NotImplementedError('Subclasses must implement `is_empty`.')
+    
+    def clean(self):
+        super().clean()
+
+        if self.date > timezone.localdate() + timedelta(days = 1):
+            raise ValidationError('Date cannot be in the future.')
+        if self.is_empty:
+            raise ValidationError('At least one metric must be provided.')
+        if self.pk:
+            original = self.__class__.objects.get(pk = self.pk)
+            if original.date != self.date:
+                raise ValidationError('Date cannot be modified.')
+            
+    def save(self, *args, **kwargs):
+        if self.is_empty and self.pk:
+            self.delete()
+        else:
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Base log for {self.user.username} on {self.date}'
 
 """
 UserProfile is an extension of the standard User model provided by Django
@@ -87,16 +122,10 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
 """
 Health logs contain miscellaneous health-related data
 """
-class HealthLog(FullCleanMixin, models.Model):
-    user            = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'health_logs')
-    date            = models.DateField()
+class HealthLog(FullCleanMixin, BaseLogMixin, models.Model):
     bodyweight      = models.FloatField(validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
     hours_slept     = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(24)], null = True, blank = True)
     liquid_consumed = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(10)], null = True, blank = True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'healthlog_unique_user_date')]
-        ordering    = ['-date']
     
     @property
     def is_empty(self):
@@ -105,18 +134,6 @@ class HealthLog(FullCleanMixin, models.Model):
             self.hours_slept     is None,
             self.liquid_consumed is None
         ])
-    
-    def clean(self):
-        super().clean()
-
-        if self.date > timezone.localdate() + timedelta(days = 1):
-            raise ValidationError('Date cannot be in the future.')
-        if self.is_empty:
-            raise ValidationError('At least one health metric must be provided.')
-        if self.pk:
-            original = HealthLog.objects.get(pk = self.pk)
-            if original.date != self.date:
-                raise ValidationError('Date cannot be modified.')
 
     def __str__(self):
         return f'Health log for {self.user.username} on {self.date}'
@@ -147,13 +164,10 @@ class MealType(models.TextChoices):
     DINNER    = 'dinner',    'Dinner'
     MISC      = 'misc',      'Miscellaneous'
 
-class FoodLog(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'food_logs')
-    date = models.DateField()
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'foodlog_unique_user_date')]
-        ordering    = ['-date']
+class FoodLog(StripTagsMixin, BaseLogMixin, models.Model):
+    @property
+    def is_empty(self):
+        return self.entries.count() == 0
 
     @property
     def breakfast_macros(self):
@@ -198,12 +212,13 @@ class FoodLog(models.Model):
 
 class FoodEntry(models.Model):
     food_log  = models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
-    food_item = models.ForeignKey(FoodItem, on_delete = models.CASCADE)
     meal_type =  models.CharField(max_length = 31, choices = MealType.choices)
+    food_item = models.ForeignKey(FoodItem, on_delete = models.CASCADE)
     quantity  = models.FloatField(validators = [MinValueValidator(0.1)])
+    comment   =  models.CharField(max_length = 255, blank = True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields = ['food_log', 'food_item', 'meal_type'], name = 'foodentry_unique_entry_per_meal')]
+        constraints = [models.UniqueConstraint(fields = ['food_log', 'meal_type', 'food_item'], name = 'foodentry_unique_entry_per_meal')]
 
     def __str__(self):
         return f"{self.food_item.name} ({self.quantity}g) for meal type {self.meal_type} of user {self.food_log.user.username} on {self.food_log.date}"
@@ -240,13 +255,10 @@ class StrengthExercise(StripTagsMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return self.name
 
-class StrengthTraining(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'strength_trainings')
-    date = models.DateField()
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'strengthtraining_unique_user_date')]
-        ordering    = ['-date']
+class StrengthTraining(BaseLogMixin, models.Model):
+    @property
+    def is_empty(self):
+        return self.session_sets.count() == 0
 
     def __str__(self):
         return f'Strength training for {self.user.username} on {self.date}'
@@ -272,13 +284,10 @@ class CardioExercise(StripTagsMixin, models.Model):
     def __str__(self):
         return self.name
 
-class CardioTraining(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'cardio_trainings')
-    date = models.DateField()
-    
-    class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'cardiotraining_unique_user_date')]
-        ordering    = ['-date']
+class CardioTraining(BaseLogMixin, models.Model):
+    @property
+    def is_empty(self):
+        return self.session_sets.count() == 0
 
     def __str__(self):
         return f'Cardio training for {self.user.username} on {self.date}'
