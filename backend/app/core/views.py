@@ -5,13 +5,13 @@ from rest_framework.permissions     import IsAuthenticated
 from rest_framework.response        import Response
 
 from core.models                    import HealthLog
-from core.models                    import FoodItem,         FoodLog
+from core.models                    import FoodItem,         MealType,    FoodLog,          FoodEntry
 from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
 from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
 from core.serializers               import HealthLogSerializer
 from core.serializers               import RegisterSerializer,         UserProfileSerializer
-from core.serializers               import FoodItemSerializer,         FoodLogSerializer
+from core.serializers               import FoodItemSerializer,         FoodLogSerializer,     FoodEntrySerializer
 from core.serializers               import StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
 from core.serializers               import CardioExerciseSerializer,   CardioSetSerializer,   CardioTrainingSerializer
 
@@ -99,6 +99,14 @@ class FoodLogListView(APIView):
 
 # NEEDS IMPLEMENTATION
 class FoodLogDetailView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class FoodEntryListView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class FoodEntryDetailView(APIView):
     pass
 
 """

@@ -53,7 +53,7 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
     MAX_AGE = 150
     GENDER_CHOICES = [
         ('M', 'Male'),
-        ('F', 'Female'),
+        ('F', 'Female')
     ]
 
     user            = models.OneToOneField(User, on_delete = models.CASCADE, related_name = 'profile', primary_key = True)
@@ -64,7 +64,7 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
     target_weight   =    models.FloatField(validators = [MinValueValidator(40),  MaxValueValidator(140)])
     target_date     =     models.DateField()
 
-    def calculate_age(self):
+    def _calculate_age(self):
         today = timezone.localdate()
         age = today.year - self.birth_date.year
         if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
@@ -74,7 +74,7 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
     def clean(self):
         super().clean()
         
-        age = self.calculate_age()
+        age = self._calculate_age()
 
         if age < self.MIN_AGE:
             raise ValidationError(f'User must be at least {self.MIN_AGE} years old.')
@@ -96,7 +96,7 @@ class HealthLog(FullCleanMixin, models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'healthlog_unique_user_date')]
-        ordering        = ['-date']
+        ordering    = ['-date']
     
     @property
     def is_empty(self):
@@ -141,9 +141,72 @@ class FoodItem(StripTagsMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return self.name
 
-# NEEDS IMPLEMENTATION
+class MealType(models.TextChoices):
+    BREAKFAST = 'breakfast', 'Breakfast'
+    LUNCH     = 'lunch',     'Lunch'
+    DINNER    = 'dinner',    'Dinner'
+    MISC      = 'misc',      'Miscellaneous'
+
 class FoodLog(models.Model):
-    pass
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'food_logs')
+    date = models.DateField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'foodlog_unique_user_date')]
+        ordering    = ['-date']
+
+    @property
+    def breakfast_macros(self):
+        return self._calculate_macros(MealType.BREAKFAST)
+
+    @property
+    def lunch_macros(self):
+        return self._calculate_macros(MealType.LUNCH)
+
+    @property
+    def dinner_macros(self):
+        return self._calculate_macros(MealType.DINNER)
+
+    @property
+    def misc_macros(self):
+        return self._calculate_macros(MealType.MISC)
+
+    @property
+    def total_macros(self):
+        total = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
+        for entry in self.entries.all():
+            factor = entry.amount_g / 100
+            total['calories']     += entry.food_item.calories      * factor
+            total['fat']          += entry.food_item.fat           * factor
+            total['carbohydrates']+= entry.food_item.carbohydrates * factor
+            total['protein']      += entry.food_item.protein       * factor
+        return total
+
+    def _calculate_macros(self, meal_type):
+        entries = self.entries.filter(meal_type = meal_type)
+        macros = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
+        for entry in entries:
+            factor = entry.amount_g / 100 
+            macros['calories']     += entry.food_item.calories      * factor
+            macros['fat']          += entry.food_item.fat           * factor
+            macros['carbohydrates']+= entry.food_item.carbohydrates * factor
+            macros['protein']      += entry.food_item.protein       * factor
+        return macros
+
+    def __str__(self):
+        return f'Food log for {self.user.username} on {self.date}'
+
+class FoodEntry(models.Model):
+    food_log  = models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
+    food_item = models.ForeignKey(FoodItem, on_delete = models.CASCADE)
+    meal_type =  models.CharField(max_length = 31, choices = MealType.choices)
+    quantity  = models.FloatField(validators = [MinValueValidator(0.1)])
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields = ['food_log', 'food_item', 'meal_type'], name = 'foodentry_unique_entry_per_meal')]
+
+    def __str__(self):
+        return f"{self.food_item.name} ({self.quantity}g) for meal type {self.meal_type} of user {self.food_log.user.username} on {self.food_log.date}"
 
 """
 Models related to strength training
@@ -182,8 +245,8 @@ class StrengthTraining(models.Model):
     date = models.DateField()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'healthlog_unique_user_date')]
-        ordering        = ['-date']
+        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'strengthtraining_unique_user_date')]
+        ordering    = ['-date']
 
     def __str__(self):
         return f'Strength training for {self.user.username} on {self.date}'
@@ -204,7 +267,7 @@ Models related to cardio training
 class CardioExercise(StripTagsMixin, models.Model):
     name                =  models.CharField(max_length = 255, unique = True)
     description         =  models.CharField(max_length = 255, blank = True)
-    calories_per_minute = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(50)])
+    calories_per_minute = models.FloatField(validators = [MinValueValidator(0.1), MaxValueValidator(50)])
 
     def __str__(self):
         return self.name
@@ -214,8 +277,8 @@ class CardioTraining(models.Model):
     date = models.DateField()
     
     class Meta:
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'healthlog_unique_user_date')]
-        ordering        = ['-date']
+        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'cardiotraining_unique_user_date')]
+        ordering    = ['-date']
 
     def __str__(self):
         return f'Cardio training for {self.user.username} on {self.date}'
@@ -223,7 +286,7 @@ class CardioTraining(models.Model):
 class CardioSet(StripTagsMixin, models.Model):
     training = models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise = models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    duration = models.IntegerField(validators = [MinValueValidator(1)])
+    duration = models.FloatField(validators = [MinValueValidator(0.1)])
     comment  =  models.CharField(max_length = 255, blank = True)
 
     def __str__(self):

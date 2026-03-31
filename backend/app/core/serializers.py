@@ -4,7 +4,7 @@ from django.core.exceptions         import ValidationError as DjangoValidationEr
 from django.contrib.auth.models     import User
 from core.models                    import UserProfile
 from core.models                    import HealthLog
-from core.models                    import FoodItem, FoodLog
+from core.models                    import FoodItem,         MealType,    FoodLog,          FoodEntry
 from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
 from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
@@ -118,6 +118,12 @@ class FoodItemSerializer(serializers.ModelSerializer):
 class FoodLogSerializer(serializers.ModelSerializer):
     class Meta:
         model  = FoodLog
+        fields = '__all__'
+
+# NEEDS IMPLEMENTATION
+class FoodEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = FoodEntry
         fields = '__all__'
 
 """

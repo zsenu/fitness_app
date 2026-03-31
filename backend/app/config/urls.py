@@ -7,6 +7,7 @@ from core.views                     import RegisterView,             UserProfile
 from core.views                     import HealthLogListView,        HealthLogDetailView
 from core.views                     import FoodItemListView,         FoodItemDetailView
 from core.views                     import FoodLogListView,          FoodLogDetailView
+from core.views                     import FoodEntryListView,        FoodEntryDetailView
 from core.views                     import StrengthExerciseListView, StrengthExerciseDetailView
 from core.views                     import StrengthSetListView,      StrengthSetDetailView
 from core.views                     import StrengthTrainingListView, StrengthTrainingDetailView
@@ -29,9 +30,10 @@ urlpatterns = [
 
     path('api/food-items/',                                FoodItemListView.as_view()),
     path('api/food-items/<int:pk>/',                       FoodItemDetailView.as_view()),
-
     path('api/food-logs/',                                 FoodLogListView.as_view()),
     path('api/food-logs/<int:pk>/',                        FoodLogDetailView.as_view()),
+    path('api/food-logs/<int:log_id>/entries/',            FoodEntryListView.as_view()),
+    path('api/food-logs/entries/<int:pk>/',                FoodEntryDetailView.as_view()),
 
     path('api/strength-exercises/',                        StrengthExerciseListView.as_view()),
     path('api/strength-exercises/<int:pk>/',               StrengthExerciseDetailView.as_view()),

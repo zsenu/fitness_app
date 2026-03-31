@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from core.models    import UserProfile
 from core.models    import HealthLog
-from core.models    import FoodItem,         FoodLog
+from core.models    import FoodItem,         MealType,    FoodLog,          FoodEntry
 from core.models    import StrengthExercise, StrengthSet, StrengthTraining
 from core.models    import CardioExercise,   CardioSet,   CardioTraining
 
@@ -11,7 +11,9 @@ admin.site.register(UserProfile)
 admin.site.register(HealthLog)
 
 admin.site.register(FoodItem)
+admin.site.register(MealType)
 admin.site.register(FoodLog)
+admin.site.register(FoodEntry)
 
 admin.site.register(StrengthExercise)
 admin.site.register(StrengthSet)
