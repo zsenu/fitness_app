@@ -3,8 +3,8 @@ from django.core.validators     import MinValueValidator, MaxValueValidator
 from django.core.exceptions     import ValidationError
 from django.contrib.auth.models import User
 from django.utils               import timezone
-from django.utils.html          import strip_tags
 from datetime                   import timedelta
+from django.utils.html          import strip_tags
 
 """
 Abstract models to apply certain behaviors
@@ -87,7 +87,7 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
 """
 Health logs contain miscellaneous health-related data
 """
-class HealthLog(models.Model):
+class HealthLog(FullCleanMixin, models.Model):
     user            = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'health_logs')
     date            = models.DateField()
     bodyweight      = models.FloatField(validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
@@ -97,9 +97,6 @@ class HealthLog(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'healthlog_unique_user_date')]
         ordering        = ['-date']
-
-    def __str__(self):
-        return f'Health log for {self.user.username} on {self.date}'
     
     @property
     def is_empty(self):
@@ -108,17 +105,38 @@ class HealthLog(models.Model):
             self.hours_slept     is None,
             self.liquid_consumed is None
         ])
+    
+    def clean(self):
+        super().clean()
+
+        if self.date > timezone.localdate() + timedelta(days = 1):
+            raise ValidationError('Date cannot be in the future.')
+        if self.is_empty:
+            raise ValidationError('At least one health metric must be provided.')
+        if self.pk:
+            original = HealthLog.objects.get(pk = self.pk)
+            if original.date != self.date:
+                raise ValidationError('Date cannot be modified.')
+
+    def __str__(self):
+        return f'Health log for {self.user.username} on {self.date}'
 
 """
 Models related to food entries
 """
-class FoodItem(StripTagsMixin, models.Model):
+class FoodItem(StripTagsMixin, FullCleanMixin, models.Model):
     name          =  models.CharField(max_length = 255, unique = True)
     description   =  models.CharField(max_length = 255, blank = True)
     calories      = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(2000)])
     fat           = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)])
     carbohydrates = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)])
     protein       = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)])
+
+    def clean(self):
+        super().clean()
+
+        if self.fat + self.carbohydrates + self.protein > 100:
+            raise ValidationError("Total macronutrients cannot exceed 100 grams.")
 
     def __str__(self):
         return self.name
@@ -130,7 +148,7 @@ class FoodLog(models.Model):
 """
 Models related to strength training
 """
-class StrengthExercise(StripTagsMixin, models.Model):
+class StrengthExercise(StripTagsMixin, FullCleanMixin, models.Model):
     ALLOWED_MUSCLE_GROUPS = [
         'chest', 'back', 'abdominals',
         'shoulders', 'biceps', 'triceps',

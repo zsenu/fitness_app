@@ -1,26 +1,19 @@
-from django.db                  import transaction
-from rest_framework             import status
-from rest_framework.views       import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response    import Response
+from django.db                      import transaction
+from rest_framework                 import status
+from rest_framework.views           import APIView
+from rest_framework.permissions     import IsAuthenticated
+from rest_framework.response        import Response
 
-from .models                    import FoodItem
-from .models                    import StrengthExercise
-from .models                    import StrengthSet
-from .models                    import StrengthTraining
-from .models                    import CardioExercise
-from .models                    import CardioSet
-from .models                    import CardioTraining
+from core.models                    import HealthLog
+from core.models                    import FoodItem,         FoodLog
+from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
+from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
-from .serializers               import RegisterSerializer
-from .serializers               import UserProfileSerializer
-from .serializers               import FoodItemSerializer
-from .serializers               import StrengthExerciseSerializer
-from .serializers               import StrengthSetSerializer
-from .serializers               import StrengthTrainingSerializer
-from .serializers               import CardioExerciseSerializer
-from .serializers               import CardioSetSerializer
-from .serializers               import CardioTrainingSerializer
+from core.serializers               import HealthLogSerializer
+from core.serializers               import RegisterSerializer,         UserProfileSerializer
+from core.serializers               import FoodItemSerializer,         FoodLogSerializer
+from core.serializers               import StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
+from core.serializers               import CardioExerciseSerializer,   CardioSetSerializer,   CardioTrainingSerializer
 
 """
 View for health endpoint
@@ -59,6 +52,13 @@ class UserProfileView(APIView):
 """
 Health-related views
 """
+# NEEDS IMPLEMENTATION
+class HealthLogListView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class HealthLogDetailView(APIView):
+    pass
 
 """
 Food-related views
@@ -92,6 +92,14 @@ class FoodItemDetailView(APIView):
             return Response({"detail": "Food item not found."}, status = status.HTTP_404_NOT_FOUND)
         serializer = FoodItemSerializer(food_item)
         return Response(serializer.data, status = status.HTTP_200_OK)
+
+# NEEDS IMPLEMENTATION
+class FoodLogListView(APIView):
+    pass
+
+# NEEDS IMPLEMENTATION
+class FoodLogDetailView(APIView):
+    pass
 
 """
 Strength-related views

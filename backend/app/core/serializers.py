@@ -1,17 +1,12 @@
-from datetime                   import date
-from rest_framework             import serializers
+from rest_framework                 import serializers
+from django.core.exceptions         import ValidationError as DjangoValidationError
 
-from django.contrib.auth.models import User
-from .models                    import UserProfile
-from .models                    import HealthLog
-from .models                    import FoodItem
-from .models                    import FoodLog
-from .models                    import StrengthExercise
-from .models                    import StrengthSet
-from .models                    import StrengthTraining
-from .models                    import CardioExercise
-from .models                    import CardioSet
-from .models                    import CardioTraining
+from django.contrib.auth.models     import User
+from core.models                    import UserProfile
+from core.models                    import HealthLog
+from core.models                    import FoodItem, FoodLog
+from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
+from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
 """
 User-related serializers
@@ -28,19 +23,31 @@ class RegisterSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
 
-    def create(self, validated_data):
-        profile_data = {
-            key: validated_data.pop(key)
-            for key in [
+    def validate(self, attrs):
+        profile_data = { key: attrs[key] for key in [
+            'gender', 'birth_date', 'height',
+            'starting_weight', 'target_weight', 'target_date'
+        ]}
+
+        dummy_profile = UserProfile(**profile_data)
+
+        try:
+            dummy_profile.full_clean()
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict)
+
+        return attrs
+
+    def create(self, attrs):
+        profile_data = { key: attrs.pop(key) for key in [
                 'gender', 'birth_date', 'height',
                 'starting_weight', 'target_weight', 'target_date'
-            ]
-        }
+        ]}
 
         user = User.objects.create_user(
-            username = validated_data['username'],
-            email    = validated_data['email'],
-            password = validated_data['password']
+            username = attrs['username'],
+            email    = attrs['email'],
+            password = attrs['password']
         )
 
         UserProfile.objects.create(user = user, **profile_data)
@@ -67,11 +74,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'user_id', 'username', 'email', 'id',
             'gender', 'birth_date', 'height'
         ]
+    
+    def validate(self, attrs):
+        instance = UserProfile(**attrs)
+        instance.full_clean()
+        return attrs
 
 """
 Health-related serializers
 """
-# NEEDS IMPLEMENTATION
 class HealthLogSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())
     
@@ -79,31 +90,14 @@ class HealthLogSerializer(serializers.ModelSerializer):
         model  = HealthLog
         fields = [
             'id', 'user', 'date',
-            'measured_weight', 'sleep_hours', 'consumed_liquid_liters'
-        ]
-        read_only_fields = [
-            'id', 'user'
+            'bodyweight', 'hours_slept', 'liquid_consumed'
         ]
 
-    def validate_date(self, value):
-        if value > date.today():
-            raise serializers.ValidationError('Date cannot be in the future.')
-        return value
-    
-    def validate(self, data):
-        instance = getattr(self, 'instance', None)
+    def validate(self, attrs):
+        instance = HealthLog(**attrs)
+        instance.full_clean()
+        return attrs
 
-        measured_weight        = data.get('measured_weight',        instance.measured_weight        if instance else None)
-        sleep_hours            = data.get('sleep_hours',            instance.sleep_hours            if instance else None)
-        consumed_liquid_liters = data.get('consumed_liquid_liters', instance.consumed_liquid_liters if instance else None)
-
-        if not any([
-            measured_weight        is not None,
-            sleep_hours            is not None,
-            consumed_liquid_liters is not None
-        ]):
-            raise serializers.ValidationError('At least one health metric must be provided.')
-        return data 
 """
 Food-related serializers
 """
@@ -115,14 +109,10 @@ class FoodItemSerializer(serializers.ModelSerializer):
             'calories', 'fat', 'carbohydrates', 'protein'
         ]
 
-    def validate(self, data):
-        fat           = data.get('fat')
-        carbohydrates = data.get('carbohydrates')
-        protein       = data.get('protein')
-
-        if fat + carbohydrates + protein > 100:
-            raise serializers.ValidationError("Total macronutrients cannot exceed 100 grams.")
-        return data
+    def validate(self, attrs):
+        instance = FoodItem(**attrs)
+        instance.full_clean()
+        return attrs
 
 # NEEDS IMPLEMENTATION
 class FoodLogSerializer(serializers.ModelSerializer):
@@ -141,6 +131,11 @@ class StrengthExerciseSerializer(serializers.ModelSerializer):
             'target_muscle_groups'
         ]
 
+    def validate(self, attrs):
+        instance = StrengthExercise(**attrs)
+        instance.full_clean()
+        return attrs
+
 class StrengthSetSerializer(serializers.ModelSerializer):
     exercise = StrengthExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
@@ -155,6 +150,11 @@ class StrengthSetSerializer(serializers.ModelSerializer):
             'id', 'training_id', 'exercise',
             'exercise_id', 'weight', 'reps', 'comment'
         ]
+
+    def validate(self, attrs):
+        instance = StrengthSet(**attrs)
+        instance.full_clean()
+        return attrs
 
 class StrengthTrainingSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())
@@ -177,6 +177,11 @@ class CardioExerciseSerializer(serializers.ModelSerializer):
             'id', 'name', 'description',
             'calories_burned_per_minute'
         ]
+    
+    def validate(self, attrs):
+        instance = CardioExercise(**attrs)
+        instance.full_clean()
+        return attrs
 
 class CardioSetSerializer(serializers.ModelSerializer):
     exercise = CardioExerciseSerializer(read_only = True)
@@ -192,6 +197,11 @@ class CardioSetSerializer(serializers.ModelSerializer):
             'id', 'training_id', 'exercise',
             'exercise_id', 'duration_minutes', 'comment'
         ]
+
+    def validate(self, attrs):
+        instance = CardioSet(**attrs)
+        instance.full_clean()
+        return attrs
 
 class CardioTrainingSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())

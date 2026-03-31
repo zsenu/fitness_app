@@ -1,16 +1,17 @@
 from django.contrib import admin
-from .models        import UserProfile
-from .models        import FoodItem
-from .models        import StrengthExercise
-from .models        import StrengthSet
-from .models        import StrengthTraining
-from .models        import CardioExercise
-from .models        import CardioSet
-from .models        import CardioTraining
+
+from core.models    import UserProfile
+from core.models    import HealthLog
+from core.models    import FoodItem,         FoodLog
+from core.models    import StrengthExercise, StrengthSet, StrengthTraining
+from core.models    import CardioExercise,   CardioSet,   CardioTraining
 
 admin.site.register(UserProfile)
 
+admin.site.register(HealthLog)
+
 admin.site.register(FoodItem)
+admin.site.register(FoodLog)
 
 admin.site.register(StrengthExercise)
 admin.site.register(StrengthSet)
