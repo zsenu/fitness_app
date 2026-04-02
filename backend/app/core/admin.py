@@ -11,7 +11,6 @@ admin.site.register(UserProfile)
 admin.site.register(HealthLog)
 
 admin.site.register(FoodItem)
-admin.site.register(MealType)
 admin.site.register(FoodLog)
 admin.site.register(FoodEntry)
 

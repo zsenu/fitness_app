@@ -52,7 +52,7 @@ class BaseLogMixin(models.Model):
 
     class Meta:
         abstract    = True
-        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = 'unique_user_date')]
+        constraints = [models.UniqueConstraint(fields = ['user', 'date'], name = '%(app_label)s_%(class)s_unique_user_date')]
         ordering    = ['-date']
 
     @property
