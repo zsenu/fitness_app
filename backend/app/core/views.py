@@ -5,7 +5,7 @@ from rest_framework.permissions     import IsAuthenticated
 from rest_framework.response        import Response
 
 from core.models                    import HealthLog
-from core.models                    import FoodItem,         MealType,    FoodLog,          FoodEntry
+from core.models                    import FoodItem,         FoodLog,          FoodEntry
 from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
 from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
@@ -52,13 +52,44 @@ class UserProfileView(APIView):
 """
 Health-related views
 """
-# NEEDS IMPLEMENTATION
 class HealthLogListView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
 
-# NEEDS IMPLEMENTATION
+    def get(self, request):
+        health_logs = HealthLog.objects.filter(user = request.user)
+        serializer  = HealthLogSerializer(health_logs, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = HealthLogSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save(user = request.user)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
 class HealthLogDetailView(APIView):
-    pass
+    authentication_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return HealthLog.objects.get(pk = pk, user = self.request.user)
+        except HealthLog.DoesNotExist:
+            return None
+    
+    def get(self, request, pk):
+        health_log = self.get_object(pk)
+        if not health_log or health_log.user != request.user:
+            return Response({'detail': 'Health log not found.'}, status = status.HTTP_404_NOT_FOUND)
+        serializer = HealthLogSerializer(health_log)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def put(self, request, pk):
+        health_log = self.get_object(pk)
+        if not health_log or health_log.user != request.user:
+            return Response({'detail': 'Health log not found.'}, status = status.HTTP_404_NOT_FOUND)
+        serializer = HealthLogSerializer(health_log, data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
 """
 Food-related views
@@ -93,21 +124,87 @@ class FoodItemDetailView(APIView):
         serializer = FoodItemSerializer(food_item)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
-# NEEDS IMPLEMENTATION
-class FoodLogListView(APIView):
-    pass
-
-# NEEDS IMPLEMENTATION
-class FoodLogDetailView(APIView):
-    pass
-
-# NEEDS IMPLEMENTATION
 class FoodEntryListView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
 
-# NEEDS IMPLEMENTATION
+    def get(self, request):
+        food_entries = FoodEntry.objects.filter(parent_log__user = request.user)
+        serializer   = FoodEntrySerializer(food_entries, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = FoodEntrySerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        parent_log = serializer.validated_data.get('parent_log')
+        if parent_log.user != request.user:
+            return Response(
+                { 'detail': 'Cannot add entries to logs of other users.' },
+                status = status.HTTP_403_FORBIDDEN
+            )
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
 class FoodEntryDetailView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return FoodEntry.objects.get(pk = pk)
+        except FoodEntry.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        food_entry = self.get_object(pk)
+        if not food_entry or food_entry.parent_log.user != request.user:
+            return Response({'detail': 'Food entry not found.'}, status = status.HTTP_404_NOT_FOUND)
+        serializer = FoodEntrySerializer(food_entry)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def put(self, request, pk):
+        food_entry = self.get_object(pk)
+        if not food_entry or food_entry.parent_log.user != request.user:
+            return Response({'detail': 'Food entry not found.'}, status = status.HTTP_404_NOT_FOUND)
+        serializer = FoodEntrySerializer(food_entry, data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        food_entry = self.get_object(pk)
+        if not food_entry or food_entry.parent_log.user != request.user:
+            return Response({'detail': 'Food entry not found.'}, status = status.HTTP_404_NOT_FOUND)
+        food_entry.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class FoodLogListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        food_logs = FoodLog.objects.filter(user = request.user)
+        serializer = FoodLogSerializer(food_logs, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = FoodLogSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save(user = request.user)
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
+class FoodLogDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return FoodLog.objects.get(pk = pk, user = self.request.user)
+        except FoodLog.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        food_log = self.get_object(pk)
+        if not food_log or food_log.user != request.user:
+            return Response({'detail': 'Food log not found.'}, status = status.HTTP_404_NOT_FOUND)
+        serializer = FoodLogSerializer(food_log)
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
 """
 Strength-related views
@@ -156,7 +253,7 @@ class StrengthSetListView(APIView):
         except StrengthTraining.DoesNotExist:
             return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
         
-        serializer = StrengthSetSerializer(data = request.data, context = {'request': request})
+        serializer = StrengthSetSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save(training = training)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -181,7 +278,7 @@ class StrengthSetDetailView(APIView):
         strength_set = self.get_object(pk, request.user)
         if not strength_set:
             return Response({"detail": "Strength set not found."}, status = status.HTTP_404_NOT_FOUND)
-        serializer = StrengthSetSerializer(strength_set, data = request.data, partial = True, context = {'request': request})
+        serializer = StrengthSetSerializer(strength_set, data = request.data, partial = True)
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
@@ -202,7 +299,7 @@ class StrengthTrainingListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = StrengthTrainingSerializer(data = request.data, context = {'request': request})
+        serializer = StrengthTrainingSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save(user = request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -227,7 +324,7 @@ class StrengthTrainingDetailView(APIView):
         training = self.get_object(pk, request.user)
         if not training:
             return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
-        serializer = StrengthTrainingSerializer(training, data = request.data, partial = True, context = {'request': request})
+        serializer = StrengthTrainingSerializer(training, data = request.data, partial = True)
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
@@ -286,7 +383,7 @@ class CardioSetListView(APIView):
         except CardioTraining.DoesNotExist:
             return Response({"detail": "Cardio training not found."}, status = status.HTTP_404_NOT_FOUND)
         
-        serializer = CardioSetSerializer(data = request.data, context = {'request': request})
+        serializer = CardioSetSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save(training = training)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -311,7 +408,7 @@ class CardioSetDetailView(APIView):
         cardio_set = self.get_object(pk, request.user)
         if not cardio_set:
             return Response({"detail": "Cardio set not found."}, status = status.HTTP_404_NOT_FOUND)
-        serializer = CardioSetSerializer(cardio_set, data = request.data, partial = True, context = {'request': request})
+        serializer = CardioSetSerializer(cardio_set, data = request.data, partial = True)
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
@@ -332,7 +429,7 @@ class CardioTrainingListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = CardioTrainingSerializer(data = request.data, context = {'request': request})
+        serializer = CardioTrainingSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save(user = request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -357,7 +454,7 @@ class CardioTrainingDetailView(APIView):
         training = self.get_object(pk, request.user)
         if not training:
             return Response({"detail": "Cardio training not found."}, status = status.HTTP_404_NOT_FOUND)
-        serializer = CardioTrainingSerializer(training, data = request.data, partial = True, context = {'request': request})
+        serializer = CardioTrainingSerializer(training, data = request.data, partial = True)
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
