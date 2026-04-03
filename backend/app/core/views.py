@@ -61,13 +61,13 @@ class HealthLogListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = HealthLogSerializer(data = request.data)
+        serializer = HealthLogSerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save(user = request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
 
 class HealthLogDetailView(APIView):
-    authentication_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -86,7 +86,7 @@ class HealthLogDetailView(APIView):
         health_log = self.get_object(pk)
         if not health_log or health_log.user != request.user:
             return Response({'detail': 'Health log not found.'}, status = status.HTTP_404_NOT_FOUND)
-        serializer = HealthLogSerializer(health_log, data = request.data)
+        serializer = HealthLogSerializer(health_log, data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_200_OK)
@@ -127,20 +127,17 @@ class FoodItemDetailView(APIView):
 class FoodEntryListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        food_entries = FoodEntry.objects.filter(parent_log__user = request.user)
+    def get(self, request, log_id):
+        food_entries = FoodEntry.objects.filter(parent_log__user = request.user, parent_log__id = log_id)
         serializer   = FoodEntrySerializer(food_entries, many = True)
         return Response(serializer.data, status = status.HTTP_200_OK)
     
-    def post(self, request):
-        serializer = FoodEntrySerializer(data = request.data)
+    def post(self, request, log_id):
+        serializer = FoodEntrySerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
-        parent_log = serializer.validated_data.get('parent_log')
+        parent_log = FoodLog.objects.filter(id = log_id)
         if parent_log.user != request.user:
-            return Response(
-                { 'detail': 'Cannot add entries to logs of other users.' },
-                status = status.HTTP_403_FORBIDDEN
-            )
+            return Response({ 'detail': 'Cannot add entries to logs of other users.' }, status = status.HTTP_403_FORBIDDEN)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_201_CREATED)
 
@@ -185,7 +182,7 @@ class FoodLogListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = FoodLogSerializer(data = request.data)
+        serializer = FoodLogSerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save(user = request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)

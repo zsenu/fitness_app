@@ -50,22 +50,17 @@ class BaseLogMixin(models.Model):
 
     @property
     def is_empty(self):
-        if not self.pk:
-            return False
-        return self._is_empty_implementation()
-    
-    def _is_empty_implementation(self):
         raise NotImplementedError('Subclasses must implement `is_empty`.')
 
     def clean(self):
         super().clean()
 
         if self.date > timezone.localdate() + timedelta(days = 1):
-            raise ValidationError('Date cannot be in the future.')
+            raise ValidationError({ 'date': 'Date cannot be in the future.' })
         if self.pk:
             original = self.__class__.objects.get(pk = self.pk)
             if original.date != self.date:
-                raise ValidationError('Date cannot be modified.')
+                raise ValidationError({ 'date': 'Date cannot be modified.' })
             
     def save(self, *args, **kwargs):
         if self.is_empty and self.pk:
@@ -74,7 +69,7 @@ class BaseLogMixin(models.Model):
             super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Base log for {self.user.username} on {self.date}'
+        return f'Base log for { self.user.username } on { self.date }'
 
 class BaseEntryMixin(models.Model):
     class Meta:
@@ -123,35 +118,42 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
         age = self._calculate_age()
 
         if age < MIN_AGE:
-            raise ValidationError(f'User must be at least {MIN_AGE} years old.')
+            raise ValidationError({ 'birth_date': f'User must be at least {MIN_AGE} years old.' })
         elif age > MAX_AGE:
-            raise ValidationError(f'Birth date cannot be more than {MAX_AGE} years ago.')
+            raise ValidationError({ 'birth_date': f'Birth date cannot be more than {MAX_AGE} years ago.' })
 
     def __str__(self):
-        return f'{self.user.username}\'s profile'
+        return f'{ self.user.username }\'s profile'
 
 """
 Health logs contain miscellaneous health-related data
 """
-class HealthLog(FullCleanMixin, BaseLogMixin, models.Model):
+class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
     bodyweight      = models.FloatField(validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
-    hours_slept     = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(24)], null = True, blank = True)
-    liquid_consumed = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(10)], null = True, blank = True)
+    hours_slept     = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(24)],   null = True, blank = True)
+    liquid_consumed = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(10)],   null = True, blank = True)
     
-    def _is_empty_implementation(self):
+    @property
+    def is_empty(self):
         return all([
             self.bodyweight      is None,
             self.hours_slept     is None,
             self.liquid_consumed is None
         ])
 
+    def clean(self):
+        super().clean()
+
+        if self.is_empty:
+            raise ValidationError({ 'health_log' : 'Health log must contain an entry' })
+
     def __str__(self):
-        return f'Health log for {self.user.username} on {self.date}'
+        return f'Health log for { self.user.username } on { self.date }'
 
 """
 Models related to food entries
 """
-class FoodItem(StripTagsMixin, FullCleanMixin, HasNameMixin, HasDescriptionMixin, models.Model):
+class FoodItem(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     calories      = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(2000)])
     fat           = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
     carbohydrates = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
@@ -165,7 +167,7 @@ class FoodItem(StripTagsMixin, FullCleanMixin, HasNameMixin, HasDescriptionMixin
         self.protein       = self.protein or 0
 
         if self.fat + self.carbohydrates + self.protein > 100:
-            raise ValidationError("Total macronutrients cannot exceed 100 grams.")
+            raise ValidationError({ 'food_item': 'Total macronutrients cannot exceed 100 grams.' })
 
     def __str__(self):
         return self.name
@@ -176,8 +178,11 @@ class MealType(models.TextChoices):
     DINNER    = 'dinner',    'Dinner'
     MISC      = 'misc',      'Miscellaneous'
 
-class FoodLog(StripTagsMixin, BaseLogMixin, models.Model):
-    def _is_empty_implementation(self):
+class FoodLog(BaseLogMixin, StripTagsMixin, models.Model):
+    @property
+    def is_empty(self):
+        if not self.pk:
+            return False
         return self.entries.count() == 0
 
     @property
@@ -200,7 +205,7 @@ class FoodLog(StripTagsMixin, BaseLogMixin, models.Model):
     def total_macros(self):
         total = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
         for entry in self.entries.all():
-            factor = entry.amount_g / 100
+            factor = entry.quantity / 100
             total['calories']     += entry.food_item.calories      * factor
             total['fat']          += entry.food_item.fat           * factor
             total['carbohydrates']+= entry.food_item.carbohydrates * factor
@@ -211,7 +216,7 @@ class FoodLog(StripTagsMixin, BaseLogMixin, models.Model):
         entries = self.entries.filter(meal_type = meal_type)
         macros = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
         for entry in entries:
-            factor = entry.amount_g / 100 
+            factor = entry.quantity / 100 
             macros['calories']     += entry.food_item.calories      * factor
             macros['fat']          += entry.food_item.fat           * factor
             macros['carbohydrates']+= entry.food_item.carbohydrates * factor
@@ -219,8 +224,9 @@ class FoodLog(StripTagsMixin, BaseLogMixin, models.Model):
         return macros
 
     def __str__(self):
-        return f'Food log for {self.user.username} on {self.date}'
+        return f'Food log for { self.user.username } on { self.date }'
 
+# ADD PLURAL FORM TO META
 class FoodEntry(BaseEntryMixin, HasDescriptionMixin, models.Model):
     parent_log  = models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
     meal_type   =  models.CharField(max_length = 31, choices = MealType.choices)
@@ -231,7 +237,7 @@ class FoodEntry(BaseEntryMixin, HasDescriptionMixin, models.Model):
         constraints = [models.UniqueConstraint(fields = ['parent_log', 'meal_type', 'food_item'], name = 'foodentry_unique_entry_per_meal')]
 
     def __str__(self):
-        return f"{self.food_item.name} ({self.quantity}g) for meal type {self.meal_type} of user {self.parent_log.user.username} on {self.parent_log.date}"
+        return f"{ self.food_item.name } ({ self.quantity }g) for meal type { self.meal_type } of user { self.parent_log.user.username } on { self.parent_log.date }"
 
 """
 Models related to strength training
@@ -240,48 +246,54 @@ class MuscleGroup(HasNameMixin, models.Model):
     def __str__(self):
         return self.name
 
-class StrengthExercise(StripTagsMixin, FullCleanMixin, HasNameMixin, HasDescriptionMixin, models.Model):
+class StrengthExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     target_muscle_groups = models.ManyToManyField(MuscleGroup, related_name = 'exercises')
 
     def __str__(self):
         return self.name
 
 class StrengthTraining(BaseLogMixin, models.Model):
-    def _is_empty_implementation(self):
+    @property
+    def is_empty(self):
+        if not self.pk:
+            return False
         return self.session_sets.count() == 0
 
     def __str__(self):
-        return f'Strength training for {self.user.username} on {self.date}'
+        return f'Strength training for { self.user.username } on { self.date }'
 
-class StrengthSet(BaseEntryMixin, StripTagsMixin, HasDescriptionMixin, models.Model):
+class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
     parent_log =   models.ForeignKey(StrengthTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(StrengthExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
     weight     =   models.FloatField(validators = [MinValueValidator(0.1)])
     reps       = models.IntegerField(validators = [MinValueValidator(1)])
 
     def __str__(self):
-        return f'Set for {self.exercise.name}'
+        return f'Set for { self.exercise.name }'
 
 """
 Models related to cardio training
 """
-class CardioExercise(StripTagsMixin, HasNameMixin, HasDescriptionMixin, models.Model):
+class CardioExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
     calories_per_minute = models.FloatField(validators = [MinValueValidator(0.1), MaxValueValidator(50)])
 
     def __str__(self):
         return self.name
 
 class CardioTraining(BaseLogMixin, models.Model):
-    def _is_empty_implementation(self):
+    @property
+    def is_empty(self):
+        if not self.pk:
+            return False
         return self.session_sets.count() == 0
 
     def __str__(self):
-        return f'Cardio training for {self.user.username} on {self.date}'
+        return f'Cardio training for { self.user.username } on { self.date }'
 
-class CardioSet(BaseEntryMixin, StripTagsMixin, HasDescriptionMixin, models.Model):
+class CardioSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
     parent_log = models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   = models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
     duration   = models.FloatField(validators = [MinValueValidator(0.1)])
 
     def __str__(self):
-        return f'Set for {self.exercise.name}'
+        return f'Set for { self.exercise.name }'

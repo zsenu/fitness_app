@@ -117,6 +117,7 @@ class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
             'calories', 'fat', 'carbohydrates', 'protein'
         ]
 
+# TEST FOR MEAL TYPE
 class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
     parent_log = serializers.PrimaryKeyRelatedField(read_only = True)
     parent_log_id = serializers.PrimaryKeyRelatedField(
@@ -134,9 +135,8 @@ class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = FoodEntry
         fields = [
-            # TEST FOR MEAL TYPE!!!
-            'id', 'meal_type',
-            'food_item', 'quantity', 'description'
+            'id', 'parent_log_id', 'parent_log', 'meal_type',
+            'food_item', 'food_item_id', 'quantity', 'description'
         ]
 
 class FoodLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):

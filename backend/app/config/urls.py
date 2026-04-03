@@ -15,6 +15,7 @@ from core.views                     import CardioExerciseListView,   CardioExerc
 from core.views                     import CardioSetListView,        CardioSetDetailView
 from core.views                     import CardioTrainingListView,   CardioTrainingDetailView
 
+# ADD NAMES
 urlpatterns = [
     path('health/', HealthCheckView.as_view(), name = 'health-check'),
 
@@ -26,15 +27,19 @@ urlpatterns = [
     path('api/profiles/me/',                               UserProfileView.as_view()),
 
     path('api/health-logs/',                               HealthLogListView.as_view()),
+    # PUT METHOD ERROR!
     path('api/health-logs/<int:pk>/',                      HealthLogDetailView.as_view()),
 
     path('api/food-items/',                                FoodItemListView.as_view()),
     path('api/food-items/<int:pk>/',                       FoodItemDetailView.as_view()),
     path('api/food-logs/',                                 FoodLogListView.as_view()),
     path('api/food-logs/<int:pk>/',                        FoodLogDetailView.as_view()),
+    # POST METHOD ERROR!
     path('api/food-logs/<int:log_id>/entries/',            FoodEntryListView.as_view()),
+    # PUT METHOD ERROR!
     path('api/food-logs/entries/<int:pk>/',                FoodEntryDetailView.as_view()),
 
+    # vvv NEED TO BE TESTED vvv
     path('api/strength-exercises/',                        StrengthExerciseListView.as_view()),
     path('api/strength-exercises/<int:pk>/',               StrengthExerciseDetailView.as_view()),
     path('api/strength-trainings/',                        StrengthTrainingListView.as_view()),
