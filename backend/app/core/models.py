@@ -18,26 +18,17 @@ GENDER_CHOICES = [
 """
 Abstract models to apply certain behaviors
 """
-class StripTagsMixin(models.Model):
+class HasNameMixin(models.Model):
+    name = models.CharField(max_length = MAX_NAME_LENGTH, unique = True)
+
     class Meta:
         abstract = True
 
-    def clean(self):
-        super().clean()
+class HasDescriptionMixin(models.Model):
+    description = models.CharField(max_length = MAX_DESCRIPTION_LENGTH, blank = True)
 
-        for field in self._meta.get_fields():
-            if isinstance(field, (models.CharField, models.TextField)):
-                value = getattr(self, field.name, None)
-                if value is not None:
-                    setattr(self, field.name, strip_tags(value))
-
-class FullCleanMixin(models.Model):
     class Meta:
         abstract = True
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 class BaseLogMixin(models.Model):
     user = models.ForeignKey(User, on_delete = models.CASCADE)
@@ -81,17 +72,26 @@ class BaseEntryMixin(models.Model):
         if parent_log.is_empty:
             parent_log.delete()
 
-class HasNameMixin(models.Model):
-    name = models.CharField(max_length = MAX_NAME_LENGTH, unique = True)
-
+class StripTagsMixin(models.Model):
     class Meta:
         abstract = True
 
-class HasDescriptionMixin(models.Model):
-    description = models.CharField(max_length = MAX_DESCRIPTION_LENGTH, blank = True)
+    def clean(self):
+        super().clean()
 
+        for field in self._meta.get_fields():
+            if isinstance(field, (models.CharField, models.TextField)):
+                value = getattr(self, field.name, None)
+                if value is not None:
+                    setattr(self, field.name, strip_tags(value))
+
+class FullCleanMixin(models.Model):
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 """
 UserProfile is an extension of the standard User model provided by Django

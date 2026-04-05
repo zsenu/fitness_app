@@ -27,19 +27,15 @@ urlpatterns = [
     path('api/profiles/me/',                               UserProfileView.as_view(),            name = 'user-profile'),
 
     path('api/health-logs/',                               HealthLogListView.as_view(),          name = 'health-log-list'),
-    # PUT METHOD ERROR!
     path('api/health-logs/<int:pk>/',                      HealthLogDetailView.as_view(),        name = 'health-log-detail'),
 
     path('api/food-items/',                                FoodItemListView.as_view(),           name = 'food-item-list'),
     path('api/food-items/<int:pk>/',                       FoodItemDetailView.as_view(),         name = 'food-item-detail'),
     path('api/food-logs/',                                 FoodLogListView.as_view(),            name = 'food-log-list'),
     path('api/food-logs/<int:pk>/',                        FoodLogDetailView.as_view(),          name = 'food-log-detail'),
-    # POST METHOD ERROR!
     path('api/food-logs/<int:log_id>/entries/',            FoodEntryListView.as_view(),          name = 'food-entry-list'),
-    # PUT METHOD ERROR!
     path('api/food-logs/entries/<int:pk>/',                FoodEntryDetailView.as_view(),        name = 'food-entry-detail'),
 
-    # vvv NEED TO BE TESTED vvv
     path('api/strength-exercises/',                        StrengthExerciseListView.as_view(),   name = 'strength-exercise-list'),
     path('api/strength-exercises/<int:pk>/',               StrengthExerciseDetailView.as_view(), name = 'strength-exercise-detail'),
     path('api/strength-trainings/',                        StrengthTrainingListView.as_view(),   name = 'strength-training-list'),

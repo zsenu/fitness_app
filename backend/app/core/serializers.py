@@ -22,11 +22,20 @@ class FullCleanSerializer(serializers.ModelSerializer):
         abstract = True
 
     def validate(self, attrs):
-        model_class = self.Meta.model
-        instance = model_class(**attrs)
-        if getattr(self, 'instance', None):
-            instance.pk = self.instance.pk
+        m2m_fields = [
+            field.name for field in self.Meta.model._meta.many_to_many
+        ]
+        m2m_data = {field: attrs.pop(field) for field in m2m_fields if field in attrs}
+
+        if self.instance:
+            instance = self.Meta.model.objects.get(pk = self.instance.pk)
+            for attr, value in attrs.items():
+                setattr(instance, attr, value)
+        else:
+            instance = self.Meta.model(**attrs)
+
         instance.full_clean()
+        attrs.update(m2m_data)
         return attrs
 
 """
@@ -117,13 +126,10 @@ class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
             'calories', 'fat', 'carbohydrates', 'protein'
         ]
 
-# TEST FOR MEAL TYPE
 class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log = serializers.PrimaryKeyRelatedField(read_only = True)
-    parent_log_id = serializers.PrimaryKeyRelatedField(
+    parent_log = serializers.PrimaryKeyRelatedField(
         queryset = FoodLog.objects.all(),
-        source = 'parent_log',
-        write_only = True
+        required = False
     )
     food_item = FoodItemSerializer(read_only = True)
     food_item_id = serializers.PrimaryKeyRelatedField(
@@ -135,7 +141,7 @@ class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = FoodEntry
         fields = [
-            'id', 'parent_log_id', 'parent_log', 'meal_type',
+            'id', 'parent_log', 'meal_type',
             'food_item', 'food_item_id', 'quantity', 'description'
         ]
 
@@ -180,7 +186,10 @@ class MuscleGroupSerializer(serializers.ModelSerializer):
         ]
 
 class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    target_muscle_groups = MuscleGroupSerializer(many = True, read_only = True)
+    target_muscle_groups = serializers.PrimaryKeyRelatedField(
+        many = True,
+        queryset = MuscleGroup.objects.all()
+    )
 
     class Meta:
         model  = StrengthExercise
@@ -188,6 +197,17 @@ class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerialize
             'id', 'name', 'description',
             'target_muscle_groups'
         ]
+
+    def create(self, validated_data):
+        muscle_groups = validated_data.pop('target_muscle_groups', [])
+        exercise = StrengthExercise.objects.create(**validated_data)
+        exercise.target_muscle_groups.set(muscle_groups)
+        return exercise
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['target_muscle_groups'] = MuscleGroupSerializer(instance.target_muscle_groups, many = True).data
+        return representation
 
 class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
     exercise = StrengthExerciseSerializer(read_only = True)
@@ -207,7 +227,7 @@ class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
         fields = [
             'id',
             'parent_log_id', 'exercise_id', 'exercise',
-            'weight', 'reps', 'comment'
+            'weight', 'reps', 'description'
         ]
 
 class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
@@ -218,6 +238,11 @@ class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, s
         fields = [
             'id', 'user', 'date', 'sets'
         ]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['sets'] = StrengthSetSerializer(instance.session_sets.all(), many = True).data
+        return representation
 
 """
 Cardio-related serializers

@@ -133,11 +133,13 @@ class FoodEntryListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request, log_id):
-        serializer = FoodEntrySerializer(data = request.data, context = { 'request': request })
-        serializer.is_valid(raise_exception = True)
-        parent_log = FoodLog.objects.filter(id = log_id)
+        parent_log = FoodLog.objects.get(id = log_id)
         if parent_log.user != request.user:
             return Response({ 'detail': 'Cannot add entries to logs of other users.' }, status = status.HTTP_403_FORBIDDEN)
+        data = request.data.copy()
+        data['parent_log'] = parent_log.id
+        serializer = FoodEntrySerializer(data = data, context = { 'request': request })
+        serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data, status = status.HTTP_201_CREATED)
 
@@ -296,7 +298,7 @@ class StrengthTrainingListView(APIView):
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = StrengthTrainingSerializer(data = request.data)
+        serializer = StrengthTrainingSerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save(user = request.user)
         return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -316,22 +318,6 @@ class StrengthTrainingDetailView(APIView):
             return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
         serializer = StrengthTrainingSerializer(training)
         return Response(serializer.data, status = status.HTTP_200_OK)
-    
-    def patch(self, request, pk):
-        training = self.get_object(pk, request.user)
-        if not training:
-            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
-        serializer = StrengthTrainingSerializer(training, data = request.data, partial = True)
-        serializer.is_valid(raise_exception = True)
-        serializer.save()
-        return Response(serializer.data, status = status.HTTP_200_OK)
-    
-    def delete(self, request, pk):
-        training = self.get_object(pk, request.user)
-        if not training:
-            return Response({"detail": "Strength training not found."}, status = status.HTTP_404_NOT_FOUND)
-        training.delete()
-        return Response(status = status.HTTP_204_NO_CONTENT)
 
 """
 Cardio-related views
