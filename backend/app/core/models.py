@@ -226,7 +226,6 @@ class FoodLog(BaseLogMixin, StripTagsMixin, models.Model):
     def __str__(self):
         return f'Food log for { self.user.username } on { self.date }'
 
-# ADD PLURAL FORM TO META
 class FoodEntry(BaseEntryMixin, HasDescriptionMixin, models.Model):
     parent_log  = models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
     meal_type   =  models.CharField(max_length = 31, choices = MealType.choices)
@@ -234,6 +233,7 @@ class FoodEntry(BaseEntryMixin, HasDescriptionMixin, models.Model):
     quantity    = models.FloatField(validators = [MinValueValidator(0.1)])
 
     class Meta:
+        verbose_name_plural = 'Food entries'
         constraints = [models.UniqueConstraint(fields = ['parent_log', 'meal_type', 'food_item'], name = 'foodentry_unique_entry_per_meal')]
 
     def __str__(self):
