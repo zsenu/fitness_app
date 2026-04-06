@@ -141,12 +141,6 @@ class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
             self.liquid_consumed is None
         ])
 
-    def clean(self):
-        super().clean()
-
-        if self.is_empty:
-            raise ValidationError({ 'health_log' : 'Health log must contain an entry' })
-
     def __str__(self):
         return f'Health log for { self.user.username } on { self.date }'
 

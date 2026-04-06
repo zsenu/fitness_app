@@ -141,8 +141,10 @@ class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
     class Meta:
         model  = FoodEntry
         fields = [
-            'id', 'parent_log', 'meal_type',
-            'food_item', 'food_item_id', 'quantity', 'description'
+            'id',
+            'parent_log', 'meal_type',
+            'food_item', 'food_item_id',
+            'quantity', 'description'
         ]
 
 class FoodLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
@@ -210,15 +212,14 @@ class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerialize
         return representation
 
 class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
+    parent_log = serializers.PrimaryKeyRelatedField(
+        queryset = StrengthTraining.objects.all(),
+        required = False
+    )
     exercise = StrengthExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = StrengthExercise.objects.all(),
         source = 'exercise',
-        write_only = True
-    )
-    parent_log_id = serializers.PrimaryKeyRelatedField(
-        queryset = StrengthTraining.objects.all(),
-        source = 'parent_log',
         write_only = True
     )
 
@@ -226,7 +227,8 @@ class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
         model  = StrengthSet
         fields = [
             'id',
-            'parent_log_id', 'exercise_id', 'exercise',
+            'parent_log',
+            'exercise_id', 'exercise',
             'weight', 'reps', 'description'
         ]
 
