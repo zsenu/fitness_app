@@ -6,7 +6,7 @@ from rest_framework.response        import Response
 from rest_framework.generics        import get_object_or_404
 
 from core.models                    import HealthLog
-from core.models                    import FoodItem,         FoodLog,          FoodEntry
+from core.models                    import FoodItem,         FoodLog,     FoodEntry
 from core.models                    import StrengthExercise, StrengthSet, StrengthTraining
 from core.models                    import CardioExercise,   CardioSet,   CardioTraining
 
@@ -134,12 +134,9 @@ class FoodEntryListView(APIView):
     def post(self, request, log_id):
         parent_log = get_object_or_404(FoodLog, id = log_id, user = request.user)
 
-        data = request.data.copy()
-        data['parent_log'] = parent_log.id
-
-        serializer = FoodEntrySerializer(data = data, context = { 'request': request })
+        serializer = FoodEntrySerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
-        serializer.save()
+        serializer.save(parent_log = parent_log)
 
         return Response(serializer.data, status = status.HTTP_201_CREATED)
 
@@ -173,7 +170,7 @@ class FoodLogListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        food_logs = FoodLog.objects.filter(user = request.user)
+        food_logs = FoodLog.objects.filter(user = request.user).prefetch_related('entries__food_item')
 
         serializer = FoodLogSerializer(food_logs, many = True)
 
@@ -240,12 +237,9 @@ class StrengthSetListView(APIView):
     def post(self, request, log_id):
         parent_log = get_object_or_404(StrengthTraining, id = log_id, user = request.user)
 
-        data = request.data.copy()
-        data['parent_log'] = parent_log.id
-
-        serializer = StrengthSetSerializer(data = data, context = { 'request': request })
+        serializer = StrengthSetSerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
-        serializer.save()
+        serializer.save(parent_log = parent_log)
 
         return Response(serializer.data, status = status.HTTP_201_CREATED)
     
@@ -259,10 +253,10 @@ class StrengthSetDetailView(APIView):
 
         return Response(serializer.data, status = status.HTTP_200_OK)
     
-    def patch(self, request, pk):
+    def put(self, request, pk):
         strength_set = get_object_or_404(StrengthSet, pk = pk, parent_log__user = request.user)
 
-        serializer = StrengthSetSerializer(strength_set, data = request.data, partial = True, context = { 'request': request })
+        serializer = StrengthSetSerializer(strength_set, data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save()
 
@@ -279,7 +273,7 @@ class StrengthTrainingListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        strength_trainings = StrengthTraining.objects.filter(user = request.user)
+        strength_trainings = StrengthTraining.objects.filter(user = request.user).prefetch_related('session_sets__exercise')
 
         serializer = StrengthTrainingSerializer(strength_trainings, many = True)
 
@@ -346,12 +340,9 @@ class CardioSetListView(APIView):
     def post(self, request, log_id):
         parent_log = get_object_or_404(CardioTraining, id = log_id, user = request.user)
 
-        data = request.data.copy()
-        data['parent_log'] = parent_log.id
-
-        serializer = CardioSetSerializer(data = data)
+        serializer = CardioSetSerializer(data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
-        serializer.save()
+        serializer.save(parent_log = parent_log)
 
         return Response(serializer.data, status = status.HTTP_201_CREATED)
 
@@ -365,10 +356,10 @@ class CardioSetDetailView(APIView):
 
         return Response(serializer.data, status = status.HTTP_200_OK)
     
-    def patch(self, request, pk):
+    def put(self, request, pk):
         cardio_set = get_object_or_404(CardioSet, pk = pk, parent_log__user = request.user)
 
-        serializer = CardioSetSerializer(cardio_set, data = request.data, partial = True, context = { 'request': request })
+        serializer = CardioSetSerializer(cardio_set, data = request.data, context = { 'request': request })
         serializer.is_valid(raise_exception = True)
         serializer.save()
 
@@ -385,7 +376,7 @@ class CardioTrainingListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        trainings  = CardioTraining.objects.filter(user = request.user)
+        trainings  = CardioTraining.objects.filter(user = request.user).prefetch_related('session_sets__exercise')
 
         serializer = CardioTrainingSerializer(trainings, many = True)
 
@@ -407,19 +398,3 @@ class CardioTrainingDetailView(APIView):
         serializer = CardioTrainingSerializer(training)
 
         return Response(serializer.data, status = status.HTTP_200_OK)
-    
-    def patch(self, request, pk):
-        training = get_object_or_404(CardioTraining, pk = pk, user = request.user)
-
-        serializer = CardioTrainingSerializer(training, data = request.data, partial = True, context = { 'request': request })
-        serializer.is_valid(raise_exception = True)
-        serializer.save()
-
-        return Response(serializer.data, status = status.HTTP_200_OK)
-    
-    def delete(self, request, pk):
-        training = get_object_or_404(CardioTraining, pk = pk, user = request.user)
-
-        training.delete()
-
-        return Response(status = status.HTTP_204_NO_CONTENT)

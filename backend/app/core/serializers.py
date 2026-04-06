@@ -1,5 +1,5 @@
 from rest_framework                 import serializers
-from django.core.exceptions         import ValidationError as DjangoValidationError
+from django.db                      import transaction
 
 from django.contrib.auth.models     import User
 from core.models                    import UserProfile
@@ -22,65 +22,62 @@ class FullCleanSerializer(serializers.ModelSerializer):
         abstract = True
 
     def validate(self, attrs):
-        m2m_fields = [
-            field.name for field in self.Meta.model._meta.many_to_many
-        ]
-        m2m_data = {field: attrs.pop(field) for field in m2m_fields if field in attrs}
+        m2m_fields = [field.name for field in self.Meta.model._meta.many_to_many]
 
-        if self.instance:
-            instance = self.Meta.model.objects.get(pk = self.instance.pk)
-            for attr, value in attrs.items():
+        instance = getattr(self, 'instance', None) or self.Meta.model()
+
+        for attr, value in attrs.items():
+            if attr not in m2m_fields:
                 setattr(instance, attr, value)
-        else:
-            instance = self.Meta.model(**attrs)
 
         instance.full_clean()
-        attrs.update(m2m_data)
         return attrs
 
 """
 User-related serializers
 """
-class RegisterSerializer(serializers.ModelSerializer):
+class UserProfileRegistrationSerializer(FullCleanSerializer, serializers.ModelSerializer):
+    class Meata:
+        model = UserProfile
+        fields = [
+            'gender', 'birth_date', 'height',
+            'starting_weight', 'target_weight', 'target_date'
+        ]
+
+class RegisterSerializer(FullCleanSerializer, serializers.ModelSerializer):
+    profile = UserProfileRegistrationSerializer(write_only = True)
+
     class Meta:
         model  = User
         fields = [
-            'username', 'email', 'password',
-            'gender', 'birth_date', 'height',
-            'starting_weight', 'target_weight', 'target_date'
+            'username', 'email', 'password', 'profile'
         ]
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
     def validate(self, attrs):
-        profile_data = { key: attrs[key] for key in [
-            'gender', 'birth_date', 'height',
-            'starting_weight', 'target_weight', 'target_date'
-        ]}
+        profile_data = attrs.get('profile', None)
 
-        dummy_profile = UserProfile(**profile_data)
-
-        try:
-            dummy_profile.full_clean()
-        except DjangoValidationError as e:
-            raise serializers.ValidationError(e.message_dict)
-
+        if not profile_data:
+            raise serializers.ValidationError({ 'profile': 'This field is required.' })
+        
+        profile_serializer = UserProfileRegistrationSerializer(data = profile_data)
+        profile_serializer.is_valid(raise_exception = True)
         return attrs
 
-    def create(self, attrs):
-        profile_data = { key: attrs.pop(key) for key in [
-                'gender', 'birth_date', 'height',
-                'starting_weight', 'target_weight', 'target_date'
-        ]}
+    @transaction.atomic
+    def create(self, validated_data):
+        profile_data = validated_data.pop('profile')
 
         user = User.objects.create_user(
-            username = attrs['username'],
-            email    = attrs['email'],
-            password = attrs['password']
+            username = validated_data['username'],
+            email    = validated_data['email'],
+            password = validated_data['password']
         )
 
         UserProfile.objects.create(user = user, **profile_data)
+
         return user
 
 class UserProfileSerializer(FullCleanSerializer, serializers.ModelSerializer):
@@ -127,7 +124,7 @@ class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
         ]
 
 class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log = serializers.PrimaryKeyRelatedField(
+    parent_log_id = serializers.PrimaryKeyRelatedField(
         queryset = FoodLog.objects.all(),
         required = False
     )
@@ -188,16 +185,19 @@ class MuscleGroupSerializer(serializers.ModelSerializer):
         ]
 
 class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    target_muscle_groups = serializers.PrimaryKeyRelatedField(
+    target_muscle_groups = MuscleGroupSerializer(many = True, read_only = True)
+    target_muscle_group_ids = serializers.PrimaryKeyRelatedField(
         many = True,
-        queryset = MuscleGroup.objects.all()
+        queryset = MuscleGroup.objects.all(),
+        source = 'target_muscle_groups',
+        write_only = True
     )
 
     class Meta:
         model  = StrengthExercise
         fields = [
             'id', 'name', 'description',
-            'target_muscle_groups'
+            'target_muscle_groups', 'target_muscle_group_ids'
         ]
 
     def create(self, validated_data):
@@ -206,13 +206,8 @@ class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerialize
         exercise.target_muscle_groups.set(muscle_groups)
         return exercise
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['target_muscle_groups'] = MuscleGroupSerializer(instance.target_muscle_groups, many = True).data
-        return representation
-
 class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log = serializers.PrimaryKeyRelatedField(
+    parent_log_id = serializers.PrimaryKeyRelatedField(
         queryset = StrengthTraining.objects.all(),
         required = False
     )
@@ -233,18 +228,13 @@ class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
         ]
 
 class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
-    sets = StrengthSetSerializer(many = True, read_only = True)
+    sets = StrengthSetSerializer(many = True, read_only = True, source = 'session_sets')
 
     class Meta:
         model  = StrengthTraining
         fields = [
             'id', 'user', 'date', 'sets'
         ]
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['sets'] = StrengthSetSerializer(instance.session_sets.all(), many = True).data
-        return representation
 
 """
 Cardio-related serializers
@@ -258,15 +248,14 @@ class CardioExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer)
         ]
 
 class CardioSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
+    parent_log_id = serializers.PrimaryKeyRelatedField(
+        queryset = CardioTraining.objects.all(),
+        required = False
+    )
     exercise = CardioExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = CardioExercise.objects.all(),
         source = 'exercise',
-        write_only = True
-    )
-    parent_log_id = serializers.PrimaryKeyRelatedField(
-        queryset = CardioTraining.objects.all(),
-        source = 'parent_log',
         write_only = True
     )
 
@@ -274,12 +263,13 @@ class CardioSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
         model  = CardioSet
         fields = [
             'id',
-            'parent_log_id', 'exercise_id', 'exercise',
-            'duration_minutes', 'comment'
+            'parent_log',
+            'exercise_id', 'exercise',
+            'duration', 'description'
         ]
 
 class CardioTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
-    sets = CardioSetSerializer(many = True, read_only = True)
+    sets = CardioSetSerializer(many = True, read_only = True, source = 'session_sets')
 
     class Meta:
         model  = CardioTraining

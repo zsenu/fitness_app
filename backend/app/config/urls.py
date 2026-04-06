@@ -42,10 +42,16 @@ urlpatterns = [
     path('api/strength-trainings/<int:log_id>/sets/', StrengthSetListView.as_view(),        name = 'strength-set-list'),
     path('api/strength-trainings/sets/<int:pk>/',     StrengthSetDetailView.as_view(),      name = 'strength-set-detail'),
 
+    # TO BE TESTED
     path('api/cardio-exercises/',                     CardioExerciseListView.as_view(),     name = 'cardio-exercise-list'),
+    # TO BE TESTED
     path('api/cardio-exercises/<int:pk>/',            CardioExerciseDetailView.as_view(),   name = 'cardio-exercise-detail'),
+    # TO BE TESTED
     path('api/cardio-trainings/',                     CardioTrainingListView.as_view(),     name = 'cardio-training-list'),
+    # TO BE TESTED
     path('api/cardio-trainings/<int:pk>/',            CardioTrainingDetailView.as_view(),   name = 'cardio-training-detail'),
+    # TO BE TESTED
     path('api/cardio-trainings/<int:log_id>/sets/',   CardioSetListView.as_view(),          name = 'cardio-set-list'),
+    # TO BE TESTED
     path('api/cardio-trainings/sets/<int:pk>/',       CardioSetDetailView.as_view(),        name = 'cardio-set-detail')
 ]

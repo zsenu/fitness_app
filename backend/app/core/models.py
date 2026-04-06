@@ -1,4 +1,4 @@
-from django.db                  import models
+from django.db                  import models, transaction
 from django.core.validators     import MinValueValidator, MaxValueValidator
 from django.core.exceptions     import ValidationError
 from django.contrib.auth.models import User
@@ -67,10 +67,12 @@ class BaseEntryMixin(models.Model):
         abstract = True
 
     def delete(self, *args, **kwargs):
-        parent_log = self.parent_log
-        super().delete(*args, **kwargs)
-        if parent_log.is_empty:
-            parent_log.delete()
+        with transaction.atomic():
+            parent_log = self.parent_log
+            super().delete(*args, **kwargs)
+
+            if parent_log.is_empty:
+                parent_log.delete()
 
 class StripTagsMixin(models.Model):
     class Meta:
@@ -79,7 +81,7 @@ class StripTagsMixin(models.Model):
     def clean(self):
         super().clean()
 
-        for field in self._meta.get_fields():
+        for field in self._meta.fields:
             if isinstance(field, (models.CharField, models.TextField)):
                 value = getattr(self, field.name, None)
                 if value is not None:
@@ -101,8 +103,8 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
     gender          =     models.CharField(max_length = 1, choices = GENDER_CHOICES)
     birth_date      =     models.DateField()
     height          =  models.IntegerField(validators = [MinValueValidator(140), MaxValueValidator(240)])
-    starting_weight =    models.FloatField(validators = [MinValueValidator(40),  MaxValueValidator(140)])
-    target_weight   =    models.FloatField(validators = [MinValueValidator(40),  MaxValueValidator(140)])
+    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
+    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
     target_date     =     models.DateField()
 
     def _calculate_age(self):
@@ -129,9 +131,9 @@ class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
 Health logs contain miscellaneous health-related data
 """
 class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
-    bodyweight      = models.FloatField(validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
-    hours_slept     = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(24)],   null = True, blank = True)
-    liquid_consumed = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(10)],   null = True, blank = True)
+    bodyweight      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
+    hours_slept     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(24)],   null = True, blank = True)
+    liquid_consumed = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(10)],   null = True, blank = True)
     
     @property
     def is_empty(self):
@@ -148,10 +150,10 @@ class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
 Models related to food entries
 """
 class FoodItem(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
-    calories      = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(2000)])
-    fat           = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
-    carbohydrates = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
-    protein       = models.FloatField(validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
+    calories      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(2000)])
+    fat           = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
+    carbohydrates = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
+    protein       = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
 
     def clean(self):
         super().clean()
@@ -172,7 +174,7 @@ class MealType(models.TextChoices):
     DINNER    = 'dinner',    'Dinner'
     MISC      = 'misc',      'Miscellaneous'
 
-class FoodLog(BaseLogMixin, StripTagsMixin, models.Model):
+class FoodLog(BaseLogMixin, StripTagsMixin, FullCleanMixin, models.Model):
     @property
     def is_empty(self):
         if not self.pk:
@@ -197,34 +199,29 @@ class FoodLog(BaseLogMixin, StripTagsMixin, models.Model):
 
     @property
     def total_macros(self):
-        total = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
-        for entry in self.entries.all():
-            factor = entry.quantity / 100
-            total['calories']     += entry.food_item.calories      * factor
-            total['fat']          += entry.food_item.fat           * factor
-            total['carbohydrates']+= entry.food_item.carbohydrates * factor
-            total['protein']      += entry.food_item.protein       * factor
-        return total
+        return self._calculate_macros(None)
 
     def _calculate_macros(self, meal_type):
-        entries = self.entries.filter(meal_type = meal_type)
+        entries = (self.entries.filter(meal_type = meal_type) if meal_type else self.entries.all()).select_related('food_item')
         macros = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
         for entry in entries:
-            factor = entry.quantity / 100 
-            macros['calories']     += entry.food_item.calories      * factor
-            macros['fat']          += entry.food_item.fat           * factor
-            macros['carbohydrates']+= entry.food_item.carbohydrates * factor
-            macros['protein']      += entry.food_item.protein       * factor
+            factor = entry.quantity / 100
+            food   = entry.food_item
+            
+            macros['calories']     += food.calories      * factor
+            macros['fat']          += food.fat           * factor
+            macros['carbohydrates']+= food.carbohydrates * factor
+            macros['protein']      += food.protein       * factor
         return macros
 
     def __str__(self):
         return f'Food log for { self.user.username } on { self.date }'
 
-class FoodEntry(BaseEntryMixin, HasDescriptionMixin, models.Model):
-    parent_log  = models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
-    meal_type   =  models.CharField(max_length = 31, choices = MealType.choices)
-    food_item   = models.ForeignKey(FoodItem, on_delete = models.CASCADE)
-    quantity    = models.FloatField(validators = [MinValueValidator(0.1)])
+class FoodEntry(BaseEntryMixin, HasDescriptionMixin, FullCleanMixin, models.Model):
+    parent_log  =   models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
+    meal_type   =    models.CharField(max_length = 31, choices = MealType.choices)
+    food_item   =   models.ForeignKey(FoodItem, on_delete = models.CASCADE)
+    quantity    = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
 
     class Meta:
         verbose_name_plural = 'Food entries'
@@ -246,7 +243,7 @@ class StrengthExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCl
     def __str__(self):
         return self.name
 
-class StrengthTraining(BaseLogMixin, models.Model):
+class StrengthTraining(BaseLogMixin, FullCleanMixin, models.Model):
     @property
     def is_empty(self):
         if not self.pk:
@@ -256,10 +253,10 @@ class StrengthTraining(BaseLogMixin, models.Model):
     def __str__(self):
         return f'Strength training for { self.user.username } on { self.date }'
 
-class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
+class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     parent_log =   models.ForeignKey(StrengthTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(StrengthExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    weight     =   models.FloatField(validators = [MinValueValidator(0.1)])
+    weight     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
     reps       = models.IntegerField(validators = [MinValueValidator(1)])
 
     def __str__(self):
@@ -268,13 +265,13 @@ class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, models.Mo
 """
 Models related to cardio training
 """
-class CardioExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
-    calories_per_minute = models.FloatField(validators = [MinValueValidator(0.1), MaxValueValidator(50)])
+class CardioExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
+    calories_per_minute = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(50)])
 
     def __str__(self):
         return self.name
 
-class CardioTraining(BaseLogMixin, models.Model):
+class CardioTraining(BaseLogMixin, FullCleanMixin, models.Model):
     @property
     def is_empty(self):
         if not self.pk:
@@ -284,10 +281,10 @@ class CardioTraining(BaseLogMixin, models.Model):
     def __str__(self):
         return f'Cardio training for { self.user.username } on { self.date }'
 
-class CardioSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, models.Model):
-    parent_log = models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
-    exercise   = models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    duration   = models.FloatField(validators = [MinValueValidator(0.1)])
+class CardioSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
+    parent_log =   models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
+    exercise   =   models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
+    duration   = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
 
     def __str__(self):
         return f'Set for { self.exercise.name }'
