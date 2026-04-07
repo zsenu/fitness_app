@@ -37,8 +37,10 @@ class FullValidationMixin(serializers.ModelSerializer):
                 setattr(instance, attr, value)
 
     def synchronize_attrs_with_instance(self, instance, attrs):
+        m2m_fields = [field.name for field in self.Meta.model._meta.many_to_many]
         for attr in attrs.keys():
-            attrs[attr] = getattr(instance, attr)
+            if attr not in m2m_fields:
+                attrs[attr] = getattr(instance, attr)
 
     def validate(self, attrs):
         attrs = self.inject_context_fields(attrs)
@@ -282,6 +284,7 @@ class CardioSetSerializer(FullValidationMixin):
             'exercise_id', 'exercise',
             'duration', 'description'
         ]
+        context_fields = ['parent_log']
 
 class CardioTrainingSerializer(RelatedToUserMixin, FullValidationMixin):
     sets = CardioSetSerializer(many = True, read_only = True, source = 'session_sets')
