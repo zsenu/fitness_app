@@ -8,26 +8,31 @@ from django.utils.html          import strip_tags
 from datetime                   import timedelta
 from decimal                    import Decimal
 
-MAX_NAME_LENGTH = 63
-MAX_DESCRIPTION_LENGTH = 255
-MIN_AGE = 18
-MAX_AGE = 150
+"""
+Custom user model
+"""
+MIN_AGE                 = 18
+MAX_AGE                 = 150
+MIN_HEIGHT              = 140
+MAX_HEIGHT              = 240
+MIN_WEIGHT              = Decimal('40.00')
+MAX_WEIGHT              = Decimal('140.00')
+MIN_TARGET_CALORIES     = Decimal('100.00')
+MAX_TARGET_CALORIES     = Decimal('10000.00')
+DEFAULT_TARGET_CALORIES = Decimal('2000.00')
 GENDER_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female')
 ]
 
-"""
-Custom user model
-"""
 class CustomUser(AbstractUser):
     gender          =     models.CharField(max_length = 1, choices = GENDER_CHOICES)
     birth_date      =     models.DateField()
-    height          =  models.IntegerField(validators = [MinValueValidator(140), MaxValueValidator(240)])
-    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
-    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
+    height          =  models.IntegerField(                                    validators = [MinValueValidator(MIN_HEIGHT),          MaxValueValidator(MAX_HEIGHT)])
+    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
+    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
     target_date     =     models.DateField()
-    target_calories =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(100), MaxValueValidator(10000)], default = 2000)
+    target_calories =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_TARGET_CALORIES), MaxValueValidator(MAX_TARGET_CALORIES)], default = DEFAULT_TARGET_CALORIES)
     
     def _calculate_age(self):
         today = timezone.localdate()
@@ -52,6 +57,9 @@ class CustomUser(AbstractUser):
 """
 Abstract models to apply certain behaviors
 """
+MAX_NAME_LENGTH         = 63
+MAX_DESCRIPTION_LENGTH  = 255
+
 class HasNameMixin(models.Model):
     name = models.CharField(max_length = MAX_NAME_LENGTH, unique = True)
 
@@ -133,10 +141,15 @@ class FullCleanMixin(models.Model):
 """
 Health logs contain miscellaneous health-related data
 """
+MIN_HOURS_SLEPT     = Decimal('0.00')
+MAX_HOURS_SLEPT     = Decimal('24.00')
+MIN_LIQUID_CONSUMED = Decimal('0.00')
+MAX_LIQUID_CONSUMED = Decimal('10.00')
+
 class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
-    bodyweight      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40), MaxValueValidator(140)], null = True, blank = True)
-    hours_slept     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(24)],   null = True, blank = True)
-    liquid_consumed = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(10)],   null = True, blank = True)
+    bodyweight      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)],          null = True, blank = True)
+    hours_slept     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_HOURS_SLEPT),     MaxValueValidator(MAX_HOURS_SLEPT)],     null = True, blank = True)
+    liquid_consumed = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_LIQUID_CONSUMED), MaxValueValidator(MAX_LIQUID_CONSUMED)], null = True, blank = True)
     
     @property
     def is_empty(self):
@@ -158,11 +171,17 @@ class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
 """
 Models related to food entries
 """
+MIN_CALORIE_CONTENT      = Decimal('0.00')
+MAX_CALORIE_CONTENT      = Decimal('2000.00')
+MIN_NUTRIENT_CONTENT     = Decimal('0.00')
+MAX_NUTRIENT_CONTENT     = Decimal('100.00')
+DEFAULT_NUTRIENT_CONTENT = Decimal('0.00')
+
 class FoodItem(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
-    calories      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(2000)])
-    fat           = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
-    carbohydrates = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
-    protein       = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0), MaxValueValidator(100)],  blank = True, default = 0)
+    calories      = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_CALORIE_CONTENT),  MaxValueValidator(MAX_CALORIE_CONTENT)])
+    fat           = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_NUTRIENT_CONTENT), MaxValueValidator(MAX_NUTRIENT_CONTENT)],  blank = True, default = DEFAULT_NUTRIENT_CONTENT)
+    carbohydrates = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_NUTRIENT_CONTENT), MaxValueValidator(MAX_NUTRIENT_CONTENT)],  blank = True, default = DEFAULT_NUTRIENT_CONTENT)
+    protein       = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_NUTRIENT_CONTENT), MaxValueValidator(MAX_NUTRIENT_CONTENT)],  blank = True, default = DEFAULT_NUTRIENT_CONTENT)
 
     def clean(self):
         super().clean()
@@ -229,11 +248,13 @@ class FoodLog(BaseLogMixin, StripTagsMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return f'Food log for { self.user.username } on { self.date }'
 
+MIN_FOOD_ENTRY_QUANTITY = Decimal('0.10')
+
 class FoodEntry(BaseEntryMixin, HasDescriptionMixin, FullCleanMixin, models.Model):
     parent_log  =   models.ForeignKey(FoodLog, on_delete = models.CASCADE, related_name = 'entries')
     meal_type   =    models.CharField(max_length = 31, choices = MealType.choices)
     food_item   =   models.ForeignKey(FoodItem, on_delete = models.CASCADE)
-    quantity    = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
+    quantity    = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_FOOD_ENTRY_QUANTITY)])
 
     class Meta:
         verbose_name_plural = 'Food entries'
@@ -265,11 +286,15 @@ class StrengthTraining(BaseLogMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return f'Strength training for { self.user.username } on { self.date }'
 
+MIN_EXERCISE_WEIGHT = Decimal('0.10')
+MAX_EXERCISE_WEIGHT = Decimal('1000.00')
+MIN_EXERCISE_REPS   = 1
+
 class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     parent_log =   models.ForeignKey(StrengthTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(StrengthExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    weight     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(1000)])
-    reps       = models.IntegerField(validators = [MinValueValidator(1)])
+    weight     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_EXERCISE_WEIGHT), MaxValueValidator(MAX_EXERCISE_WEIGHT)])
+    reps       = models.IntegerField(                                    validators = [MinValueValidator(MIN_EXERCISE_REPS)])
 
     def __str__(self):
         return f'Set for { self.exercise.name }'
@@ -277,8 +302,11 @@ class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullClean
 """
 Models related to cardio training
 """
+MIN_EXERCISE_CALORIES_BURNED = Decimal('0.10')
+MAX_EXERCISE_CALORIES_BURNED = Decimal('50.00')
+
 class CardioExercise(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
-    calories_per_minute = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(50)])
+    calories_per_minute = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_EXERCISE_CALORIES_BURNED), MaxValueValidator(MAX_EXERCISE_CALORIES_BURNED)])
 
     def __str__(self):
         return self.name
@@ -293,10 +321,13 @@ class CardioTraining(BaseLogMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return f'Cardio training for { self.user.username } on { self.date }'
 
+MIN_EXERCISE_DURATION = Decimal('0.10')
+MAX_EXERCISE_DURATION = Decimal('1440.00')
+
 class CardioSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     parent_log =   models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    duration   = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(1440)])
+    duration   = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_EXERCISE_DURATION), MaxValueValidator(MAX_EXERCISE_DURATION)])
 
     def __str__(self):
         return f'Set for { self.exercise.name }'
