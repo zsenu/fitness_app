@@ -1,7 +1,7 @@
 import os
 import dj_database_url
-from pathlib  import Path
-from datetime import timedelta
+from pathlib                                 import Path
+from datetime                                import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,8 +21,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'core',
+    'core'
 ]
+AUTH_USER_MODEL = 'core.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -32,7 +33,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -46,10 +47,10 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
+                'django.contrib.messages.context_processors.messages'
+            ]
+        }
+    }
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -60,17 +61,17 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'
+    }
 ]
 
 LANGUAGE_CODE = 'en-us'
@@ -83,12 +84,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+        'rest_framework.authentication.SessionAuthentication'
+    ]
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes = 60),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_TYPES': ('Bearer')
 }

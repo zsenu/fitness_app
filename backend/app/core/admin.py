@@ -1,12 +1,12 @@
 from django.contrib import admin
 
-from core.models    import UserProfile
+from core.models    import CustomUser
 from core.models    import HealthLog
 from core.models    import FoodItem,       FoodLog,          FoodEntry
 from core.models    import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
 from core.models    import CardioExercise, CardioSet,        CardioTraining
 
-admin.site.register(UserProfile)
+admin.site.register(CustomUser)
 
 admin.site.register(HealthLog)
 

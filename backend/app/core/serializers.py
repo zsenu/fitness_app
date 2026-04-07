@@ -1,8 +1,9 @@
 from rest_framework                 import serializers
-from django.db                      import transaction
+from django.contrib.auth            import get_user_model, password_validation
+from django.core.exceptions         import ValidationError as DjangoValidationError
 
-from django.contrib.auth.models     import User
-from core.models                    import UserProfile
+User = get_user_model()
+
 from core.models                    import HealthLog
 from core.models                    import FoodItem,       FoodLog,          FoodEntry
 from core.models                    import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
@@ -11,100 +12,119 @@ from core.models                    import CardioExercise, CardioSet,        Car
 """
 Abstract serializers to apply certain behaviors
 """
-class RelatedToUserSerializer(serializers.ModelSerializer):
+class RelatedToUserMixin(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())
 
     class Meta:
         abstract = True
 
-class FullCleanSerializer(serializers.ModelSerializer):
+class FullValidationMixin(serializers.ModelSerializer):
     class Meta:
         abstract = True
 
-    def validate(self, attrs):
+    def inject_context_fields(self, attrs):
+        context_fields = getattr(self.Meta, 'context_fields', [])
+        for field_name in context_fields:
+            if field_name in self.context:
+                attrs[field_name] = self.context[field_name]
+        return attrs
+    
+    def setattr_without_m2m(self, instance, attrs):
         m2m_fields = [field.name for field in self.Meta.model._meta.many_to_many]
-
-        instance = getattr(self, 'instance', None) or self.Meta.model()
 
         for attr, value in attrs.items():
             if attr not in m2m_fields:
                 setattr(instance, attr, value)
 
-        instance.full_clean()
+    def synchronize_attrs_with_instance(self, instance, attrs):
+        for attr in attrs.keys():
+            attrs[attr] = getattr(instance, attr)
+
+    def validate(self, attrs):
+        attrs = self.inject_context_fields(attrs)
+
+        instance = getattr(self, 'instance', None) or self.Meta.model()
+
+        self.setattr_without_m2m(instance, attrs)
+
+        try:
+            instance.clean()
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict)
+
+        self.synchronize_attrs_with_instance(instance, attrs)
+
         return attrs
 
 """
 User-related serializers
 """
-class UserProfileRegistrationSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    class Meata:
-        model = UserProfile
-        fields = [
-            'gender', 'birth_date', 'height',
-            'starting_weight', 'target_weight', 'target_date'
-        ]
-
-class RegisterSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    profile = UserProfileRegistrationSerializer(write_only = True)
-
-    class Meta:
-        model  = User
-        fields = [
-            'username', 'email', 'password', 'profile'
-        ]
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
-
-    def validate(self, attrs):
-        profile_data = attrs.get('profile', None)
-
-        if not profile_data:
-            raise serializers.ValidationError({ 'profile': 'This field is required.' })
-        
-        profile_serializer = UserProfileRegistrationSerializer(data = profile_data)
-        profile_serializer.is_valid(raise_exception = True)
-        return attrs
-
-    @transaction.atomic
-    def create(self, validated_data):
-        profile_data = validated_data.pop('profile')
-
-        user = User.objects.create_user(
-            username = validated_data['username'],
-            email    = validated_data['email'],
-            password = validated_data['password']
-        )
-
-        UserProfile.objects.create(user = user, **profile_data)
-
-        return user
-
-class UserProfileSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    user_id        =          serializers.IntegerField(source = 'user.id',       read_only = True)
-    username       =             serializers.CharField(source = 'user.username', read_only = True)
-    email          =             serializers.CharField(source = 'user.email',    read_only = True)
+class UserSerializer(serializers.ModelSerializer):
     current_weight = serializers.SerializerMethodField()
 
     def get_current_weight(self, obj):
-        latest_log = obj.user.healthlog_set.filter(bodyweight__isnull = False).first()
+        latest_log = obj.healthlog_set.filter(bodyweight__isnull = False).first()
         return latest_log.bodyweight if latest_log else obj.starting_weight
 
     class Meta:
-        model  = UserProfile
+        model = User
         fields = [
-            'user_id', 'username', 'email',
+            'id', 'username', 'email',
             'gender', 'birth_date', 'height',
-            'starting_weight', 'current_weight', 'target_weight', 'target_date'
+            'starting_weight', 'current_weight',
+            'target_weight', 'target_date', 'target_calories'
         ]
         read_only_fields = [
-            'gender', 'birth_date', 'height'
+            'id', 'username', 'email',
+            'gender', 'birth_date', 'height', 'starting_weight'
         ]
 
+class RegisterSerializer(serializers.ModelSerializer):
+    password  = serializers.CharField(write_only = True, required = True)
+    password2 = serializers.CharField(write_only = True, required = True)
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'password', 'password2',
+            'gender', 'birth_date', 'height',
+            'starting_weight', 'target_weight', 'target_date', 'target_calories'
+        ]
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({ 'password': 'Password fields didn\'t match.' })
+        
+        try:
+            password_validation.validate_password(attrs['password'])
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({ 'password': e.messages })
+        
+        temp_attrs = attrs.copy()
+        temp_attrs.pop('password2')
+        temp_user = User(**temp_attrs)
+
+        try:
+            temp_user.full_clean()
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict)
+        
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        password = validated_data.pop('password')
+
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+
+        return user
+    
 """
 Health-related serializers
 """
-class HealthLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
+class HealthLogSerializer(RelatedToUserMixin, FullValidationMixin):
     class Meta:
         model  = HealthLog
         fields = [
@@ -115,7 +135,7 @@ class HealthLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializ
 """
 Food-related serializers
 """
-class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
+class FoodItemSerializer(FullValidationMixin):
     class Meta:
         model  = FoodItem
         fields = [
@@ -123,11 +143,8 @@ class FoodItemSerializer(FullCleanSerializer, serializers.ModelSerializer):
             'calories', 'fat', 'carbohydrates', 'protein'
         ]
 
-class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log_id = serializers.PrimaryKeyRelatedField(
-        queryset = FoodLog.objects.all(),
-        required = False
-    )
+class FoodEntrySerializer(FullValidationMixin):
+    parent_log = serializers.PrimaryKeyRelatedField(read_only = True)
     food_item = FoodItemSerializer(read_only = True)
     food_item_id = serializers.PrimaryKeyRelatedField(
         queryset = FoodItem.objects.all(),
@@ -143,8 +160,9 @@ class FoodEntrySerializer(FullCleanSerializer, serializers.ModelSerializer):
             'food_item', 'food_item_id',
             'quantity', 'description'
         ]
+        context_fields = ['parent_log']
 
-class FoodLogSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
+class FoodLogSerializer(RelatedToUserMixin, FullValidationMixin):
     entries          = FoodEntrySerializer(many = True, read_only = True)
     breakfast_macros = serializers.SerializerMethodField()
     lunch_macros     = serializers.SerializerMethodField()
@@ -184,7 +202,7 @@ class MuscleGroupSerializer(serializers.ModelSerializer):
             'id', 'name'
         ]
 
-class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
+class StrengthExerciseSerializer(FullValidationMixin):
     target_muscle_groups = MuscleGroupSerializer(many = True, read_only = True)
     target_muscle_group_ids = serializers.PrimaryKeyRelatedField(
         many = True,
@@ -202,15 +220,14 @@ class StrengthExerciseSerializer(FullCleanSerializer, serializers.ModelSerialize
 
     def create(self, validated_data):
         muscle_groups = validated_data.pop('target_muscle_groups', [])
+
         exercise = StrengthExercise.objects.create(**validated_data)
         exercise.target_muscle_groups.set(muscle_groups)
+
         return exercise
 
-class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log_id = serializers.PrimaryKeyRelatedField(
-        queryset = StrengthTraining.objects.all(),
-        required = False
-    )
+class StrengthSetSerializer(FullValidationMixin):
+    parent_log = serializers.PrimaryKeyRelatedField(read_only = True)
     exercise = StrengthExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = StrengthExercise.objects.all(),
@@ -226,8 +243,9 @@ class StrengthSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
             'exercise_id', 'exercise',
             'weight', 'reps', 'description'
         ]
+        context_fields = ['parent_log']
 
-class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
+class StrengthTrainingSerializer(RelatedToUserMixin, FullValidationMixin):
     sets = StrengthSetSerializer(many = True, read_only = True, source = 'session_sets')
 
     class Meta:
@@ -239,7 +257,7 @@ class StrengthTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, s
 """
 Cardio-related serializers
 """
-class CardioExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer):
+class CardioExerciseSerializer(FullValidationMixin):
     class Meta:
         model  = CardioExercise
         fields = [
@@ -247,11 +265,8 @@ class CardioExerciseSerializer(FullCleanSerializer, serializers.ModelSerializer)
             'calories_per_minute'
         ]
 
-class CardioSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
-    parent_log_id = serializers.PrimaryKeyRelatedField(
-        queryset = CardioTraining.objects.all(),
-        required = False
-    )
+class CardioSetSerializer(FullValidationMixin):
+    parent_log = serializers.PrimaryKeyRelatedField(read_only = True)
     exercise = CardioExerciseSerializer(read_only = True)
     exercise_id = serializers.PrimaryKeyRelatedField(
         queryset = CardioExercise.objects.all(),
@@ -268,7 +283,7 @@ class CardioSetSerializer(FullCleanSerializer, serializers.ModelSerializer):
             'duration', 'description'
         ]
 
-class CardioTrainingSerializer(RelatedToUserSerializer, FullCleanSerializer, serializers.ModelSerializer):
+class CardioTrainingSerializer(RelatedToUserMixin, FullValidationMixin):
     sets = CardioSetSerializer(many = True, read_only = True, source = 'session_sets')
 
     class Meta:

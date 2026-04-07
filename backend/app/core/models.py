@@ -1,10 +1,12 @@
 from django.db                  import models, transaction
+from django.contrib.auth.models import AbstractUser
+from django.conf                import settings
 from django.core.validators     import MinValueValidator, MaxValueValidator
 from django.core.exceptions     import ValidationError
-from django.contrib.auth.models import User
 from django.utils               import timezone
-from datetime                   import timedelta
 from django.utils.html          import strip_tags
+from datetime                   import timedelta
+from decimal                    import Decimal
 
 MAX_NAME_LENGTH = 63
 MAX_DESCRIPTION_LENGTH = 255
@@ -14,6 +16,38 @@ GENDER_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female')
 ]
+
+"""
+Custom user model
+"""
+class CustomUser(AbstractUser):
+    gender          =     models.CharField(max_length = 1, choices = GENDER_CHOICES)
+    birth_date      =     models.DateField()
+    height          =  models.IntegerField(validators = [MinValueValidator(140), MaxValueValidator(240)])
+    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
+    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
+    target_date     =     models.DateField()
+    target_calories =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(100), MaxValueValidator(10000)], default = 2000)
+    
+    def _calculate_age(self):
+        today = timezone.localdate()
+        age = today.year - self.birth_date.year
+        if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
+            age -= 1
+        return age
+
+    def clean(self):
+        super().clean()
+        
+        age = self._calculate_age()
+
+        if age < MIN_AGE:
+            raise ValidationError({ 'birth_date': f'User must be at least { MIN_AGE } years old.' })
+        elif age > MAX_AGE:
+            raise ValidationError({ 'birth_date': f'Birth date cannot be more than { MAX_AGE } years ago.' })
+
+    def __str__(self):
+        return f'{ self.username }\'s profile'
 
 """
 Abstract models to apply certain behaviors
@@ -31,7 +65,7 @@ class HasDescriptionMixin(models.Model):
         abstract = True
 
 class BaseLogMixin(models.Model):
-    user = models.ForeignKey(User, on_delete = models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete = models.CASCADE)
     date =  models.DateField()
 
     class Meta:
@@ -46,12 +80,13 @@ class BaseLogMixin(models.Model):
     def clean(self):
         super().clean()
 
-        if self.date > timezone.localdate() + timedelta(days = 1):
-            raise ValidationError({ 'date': 'Date cannot be in the future.' })
-        if self.pk:
-            original = self.__class__.objects.get(pk = self.pk)
-            if original.date != self.date:
-                raise ValidationError({ 'date': 'Date cannot be modified.' })
+        if self.date is not None:
+            if self.date > timezone.localdate() + timedelta(days = 1):
+                raise ValidationError({ 'date': 'Date cannot be in the future.' })
+            if self.pk:
+                original = self.__class__.objects.get(pk = self.pk)
+                if original.date != self.date:
+                    raise ValidationError({ 'date': 'Date cannot be modified.' })
             
     def save(self, *args, **kwargs):
         if self.is_empty and self.pk:
@@ -96,38 +131,6 @@ class FullCleanMixin(models.Model):
         super().save(*args, **kwargs)
 
 """
-UserProfile is an extension of the standard User model provided by Django
-"""
-class UserProfile(StripTagsMixin, FullCleanMixin, models.Model):
-    user            = models.OneToOneField(User, on_delete = models.CASCADE, related_name = 'profile', primary_key = True)
-    gender          =     models.CharField(max_length = 1, choices = GENDER_CHOICES)
-    birth_date      =     models.DateField()
-    height          =  models.IntegerField(validators = [MinValueValidator(140), MaxValueValidator(240)])
-    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
-    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(40),  MaxValueValidator(140)])
-    target_date     =     models.DateField()
-
-    def _calculate_age(self):
-        today = timezone.localdate()
-        age = today.year - self.birth_date.year
-        if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
-            age -= 1
-        return age
-
-    def clean(self):
-        super().clean()
-        
-        age = self._calculate_age()
-
-        if age < MIN_AGE:
-            raise ValidationError({ 'birth_date': f'User must be at least {MIN_AGE} years old.' })
-        elif age > MAX_AGE:
-            raise ValidationError({ 'birth_date': f'Birth date cannot be more than {MAX_AGE} years ago.' })
-
-    def __str__(self):
-        return f'{ self.user.username }\'s profile'
-
-"""
 Health logs contain miscellaneous health-related data
 """
 class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
@@ -142,6 +145,12 @@ class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
             self.hours_slept     is None,
             self.liquid_consumed is None
         ])
+    
+    def clean(self):
+        super().clean()
+
+        if self.is_empty and not self.pk:
+            raise ValidationError({'health_log': 'At least one of the fields must be filled.'})
 
     def __str__(self):
         return f'Health log for { self.user.username } on { self.date }'
@@ -158,9 +167,12 @@ class FoodItem(HasNameMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin
     def clean(self):
         super().clean()
 
-        self.fat           = self.fat or 0
-        self.carbohydrates = self.carbohydrates or 0
-        self.protein       = self.protein or 0
+        if self.fat is None:
+            self.fat = 0
+        if self.carbohydrates is None:
+            self.carbohydrates = 0
+        if self.protein is None:
+            self.protein = 0
 
         if self.fat + self.carbohydrates + self.protein > 100:
             raise ValidationError({ 'food_item': 'Total macronutrients cannot exceed 100 grams.' })
@@ -179,7 +191,7 @@ class FoodLog(BaseLogMixin, StripTagsMixin, FullCleanMixin, models.Model):
     def is_empty(self):
         if not self.pk:
             return False
-        return self.entries.count() == 0
+        return not self.entries.exists()
 
     @property
     def breakfast_macros(self):
@@ -205,20 +217,20 @@ class FoodLog(BaseLogMixin, StripTagsMixin, FullCleanMixin, models.Model):
         entries = (self.entries.filter(meal_type = meal_type) if meal_type else self.entries.all()).select_related('food_item')
         macros = {'calories': 0, 'fat': 0, 'carbohydrates': 0, 'protein': 0}
         for entry in entries:
-            factor = entry.quantity / 100
+            factor = entry.quantity / Decimal(100)
             food   = entry.food_item
-            
-            macros['calories']     += food.calories      * factor
-            macros['fat']          += food.fat           * factor
-            macros['carbohydrates']+= food.carbohydrates * factor
-            macros['protein']      += food.protein       * factor
+
+            macros['calories']     += food.calories      * Decimal(factor)
+            macros['fat']          += food.fat           * Decimal(factor)
+            macros['carbohydrates']+= food.carbohydrates * Decimal(factor)
+            macros['protein']      += food.protein       * Decimal(factor)
         return macros
 
     def __str__(self):
         return f'Food log for { self.user.username } on { self.date }'
 
 class FoodEntry(BaseEntryMixin, HasDescriptionMixin, FullCleanMixin, models.Model):
-    parent_log  =   models.ForeignKey(FoodLog,  on_delete = models.CASCADE, related_name = 'entries')
+    parent_log  =   models.ForeignKey(FoodLog, on_delete = models.CASCADE, related_name = 'entries')
     meal_type   =    models.CharField(max_length = 31, choices = MealType.choices)
     food_item   =   models.ForeignKey(FoodItem, on_delete = models.CASCADE)
     quantity    = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
@@ -248,7 +260,7 @@ class StrengthTraining(BaseLogMixin, FullCleanMixin, models.Model):
     def is_empty(self):
         if not self.pk:
             return False
-        return self.session_sets.count() == 0
+        return not self.session_sets.exists()
 
     def __str__(self):
         return f'Strength training for { self.user.username } on { self.date }'
@@ -256,7 +268,7 @@ class StrengthTraining(BaseLogMixin, FullCleanMixin, models.Model):
 class StrengthSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     parent_log =   models.ForeignKey(StrengthTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(StrengthExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    weight     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
+    weight     = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(1000)])
     reps       = models.IntegerField(validators = [MinValueValidator(1)])
 
     def __str__(self):
@@ -276,7 +288,7 @@ class CardioTraining(BaseLogMixin, FullCleanMixin, models.Model):
     def is_empty(self):
         if not self.pk:
             return False
-        return self.session_sets.count() == 0
+        return not self.session_sets.exists()
 
     def __str__(self):
         return f'Cardio training for { self.user.username } on { self.date }'
@@ -284,7 +296,7 @@ class CardioTraining(BaseLogMixin, FullCleanMixin, models.Model):
 class CardioSet(BaseEntryMixin, HasDescriptionMixin, StripTagsMixin, FullCleanMixin, models.Model):
     parent_log =   models.ForeignKey(CardioTraining, on_delete = models.CASCADE, related_name = 'session_sets')
     exercise   =   models.ForeignKey(CardioExercise, on_delete = models.CASCADE, related_name = 'performed_sets')
-    duration   = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1)])
+    duration   = models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(0.1), MaxValueValidator(1440)])
 
     def __str__(self):
         return f'Set for { self.exercise.name }'
