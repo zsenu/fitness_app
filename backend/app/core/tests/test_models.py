@@ -1,11 +1,11 @@
-from   decimal                import Decimal
-from   django.test            import TestCase
-from   django.core.exceptions import ValidationError
-from   core.models            import CustomUser, HealthLog
-from   core.models            import FoodItem, FoodLog, FoodEntry
-from   core.models            import MuscleGroup, StrengthExercise, StrengthTraining, StrengthSet
-from   core.models            import CardioExercise, CardioTraining, CardioSet
-import core.tests.fixtures    as fixtures
+from   decimal                    import Decimal
+from   django.test                import TestCase
+from   django.core.exceptions     import ValidationError
+from   core.models                import CustomUser, HealthLog
+from   core.models                import FoodItem, FoodLog, FoodEntry
+from   core.models                import MuscleGroup, StrengthExercise, StrengthTraining, StrengthSet
+from   core.models                import CardioExercise, CardioTraining, CardioSet
+import core.tests.fixtures_models as fixtures
 
 """
 User-related model tests
