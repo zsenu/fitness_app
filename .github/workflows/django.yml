@@ -6,6 +6,7 @@ on:
   pull_request:
 
 env:
+  SECRET_KEY: dummy_secret_key
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
 
 jobs:
