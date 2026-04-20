@@ -46,3 +46,8 @@ jobs:
         working-directory: backend/app
         run: |
           python manage.py test
+
+      - name: Trigger Render deploy
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
