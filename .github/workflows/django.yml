@@ -6,6 +6,7 @@ on:
   pull_request:
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SECRET_KEY: dummy_secret_key
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
 
