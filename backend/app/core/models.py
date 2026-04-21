@@ -286,7 +286,7 @@ class StrengthTraining(BaseLogMixin, FullCleanMixin, models.Model):
     def __str__(self):
         return f'Strength training for { self.user.username } on { self.date }'
 
-MIN_EXERCISE_WEIGHT = Decimal('0.10')
+MIN_EXERCISE_WEIGHT = Decimal('0.00')
 MAX_EXERCISE_WEIGHT = Decimal('1000.00')
 MIN_EXERCISE_REPS   = 1
 
