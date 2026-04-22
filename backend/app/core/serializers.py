@@ -61,27 +61,37 @@ class FullValidationMixin(serializers.ModelSerializer):
 """
 User-related serializers
 """
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(FullValidationMixin):
     current_weight = serializers.SerializerMethodField()
+    bmr            = serializers.SerializerMethodField()
+    tdee           = serializers.SerializerMethodField()
 
     def get_current_weight(self, obj):
         latest_log = obj.healthlog_set.filter(bodyweight__isnull = False).first()
         return latest_log.bodyweight if latest_log else obj.starting_weight
+    
+    def get_bmr(self, obj):
+        return obj.bmr
+    
+    def get_tdee(self, obj):
+        return obj.tdee
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email',
             'gender', 'birth_date', 'height',
-            'starting_weight', 'current_weight',
-            'target_weight', 'target_date', 'target_calories'
+            'starting_weight', 'current_weight', 'activity_level',
+            'target_weight', 'target_date', 'target_calories',
+            'bmr', 'tdee'
         ]
         read_only_fields = [
             'id', 'username', 'email',
-            'gender', 'birth_date', 'height', 'starting_weight'
+            'gender', 'birth_date', 'height', 'starting_weight',
+            'bmr', 'tdee'
         ]
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterSerializer(FullValidationMixin):
     password  = serializers.CharField(write_only = True, required = True)
     password2 = serializers.CharField(write_only = True, required = True)
 
@@ -90,7 +100,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'email', 'password', 'password2',
             'gender', 'birth_date', 'height',
-            'starting_weight', 'target_weight', 'target_date', 'target_calories'
+            'starting_weight','activity_level',
+            'target_weight', 'target_date', 'target_calories'
         ]
 
     def validate(self, attrs):
@@ -112,6 +123,28 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(e.message_dict)
         
         return attrs
+    
+    def is_valid(self, *, raise_exception = False):
+        super().is_valid(raise_exception = False)
+
+        temp_attrs = self.initial_data.copy()
+        temp_attrs.pop('password2', None)
+
+        temp_user = User()
+        for field, value in temp_attrs.items():
+            setattr(temp_user, field, value)
+
+        try:
+            temp_user.full_clean()
+        except DjangoValidationError as e:
+            if not hasattr(self, '_errors'):
+                self._errors = {}
+            self._errors.update(e.message_dict)
+
+        if self._errors and raise_exception:
+            raise serializers.ValidationError(self._errors)
+
+        return not bool(self._errors)
 
     def create(self, validated_data):
         validated_data.pop('password2')

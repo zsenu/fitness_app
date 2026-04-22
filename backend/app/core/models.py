@@ -24,16 +24,48 @@ GENDER_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female')
 ]
+ACTIVITY_LEVEL_CHOICES = [
+    ('bmr',               'Basal metabolic rate (BMR)'),
+    ('sedentary',         'Sedentary (little or no exercise)'),
+    ('lightly_active',    'Lightly active (light exercise/sports 1-3 days/week)'),
+    ('moderately_active', 'Moderately active (moderate exercise/sports 3-5 days/week)'),
+    ('very_active',       'Very active (hard exercise/sports 6-7 days a week)'),
+    ('extra_active',      'Extra active (very hard exercise/sports & physical job or 2x training)')
+]
+ACTIVITY_MULTIPLIERS = {
+    'sedentary':         1.2,
+    'lightly_active':    1.375,
+    'moderately_active': 1.55,
+    'very_active':       1.725,
+    'extra_active':      1.9
+}
 
 class CustomUser(AbstractUser):
-    gender          =     models.CharField(max_length = 1, choices = GENDER_CHOICES)
+    gender          =     models.CharField(max_length = 1,  choices = GENDER_CHOICES)
     birth_date      =     models.DateField()
-    height          =  models.IntegerField(                                    validators = [MinValueValidator(MIN_HEIGHT),          MaxValueValidator(MAX_HEIGHT)])
-    starting_weight =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
-    target_weight   =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
+    height          =  models.IntegerField(                                     validators = [MinValueValidator(MIN_HEIGHT),          MaxValueValidator(MAX_HEIGHT)])
+    starting_weight =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
+    activity_level  =     models.CharField(max_length = 31, choices = ACTIVITY_LEVEL_CHOICES, default = 'bmr')
+    target_weight   =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
     target_date     =     models.DateField()
-    target_calories =  models.DecimalField(max_digits = 8, decimal_places = 2, validators = [MinValueValidator(MIN_TARGET_CALORIES), MaxValueValidator(MAX_TARGET_CALORIES)], default = DEFAULT_TARGET_CALORIES)
-    
+    target_calories =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_TARGET_CALORIES), MaxValueValidator(MAX_TARGET_CALORIES)], default = DEFAULT_TARGET_CALORIES)
+
+    @property
+    def bmr(self):
+        age = self._calculate_age()
+        if self.gender == 'M':
+            return 10 * float(self.starting_weight) + 6.25 * self.height - 5 * age + 5
+        else:
+            return 10 * float(self.starting_weight) + 6.25 * self.height - 5 * age - 161
+        
+    @property
+    def tdee(self):
+        if self.activity_level == 'bmr':
+            return self.bmr
+        else:
+            multiplier = ACTIVITY_MULTIPLIERS.get(self.activity_level, 1)
+            return self.bmr * multiplier
+
     def _calculate_age(self):
         today = timezone.localdate()
         age = today.year - self.birth_date.year
@@ -43,13 +75,24 @@ class CustomUser(AbstractUser):
 
     def clean(self):
         super().clean()
-        
-        age = self._calculate_age()
 
-        if age < MIN_AGE:
-            raise ValidationError({ 'birth_date': f'User must be at least { MIN_AGE } years old.' })
-        elif age > MAX_AGE:
-            raise ValidationError({ 'birth_date': f'Birth date cannot be more than { MAX_AGE } years ago.' })
+        errors = {}
+        
+        if self.birth_date is not None:
+            age = self._calculate_age()
+            if age < MIN_AGE:
+                errors['birth_date'] = f'User must be at least { MIN_AGE } years old.'
+            elif age > MAX_AGE:
+                errors['birth_date'] = f'User cannot be older than { MAX_AGE } years.'
+        
+        if self.target_date is not None:
+            if self.target_date <= timezone.localdate():
+                errors['target_date'] = 'Target date must be in the future.'
+            elif self.target_date > timezone.localdate() + timedelta(days = 365 * 100):
+                errors['target_date'] = 'Target date cannot be more than 100 years in the future.'
+
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f'{ self.username }\'s profile'
@@ -163,7 +206,7 @@ class HealthLog(BaseLogMixin, FullCleanMixin, models.Model):
         super().clean()
 
         if self.is_empty and not self.pk:
-            raise ValidationError({'health_log': 'At least one of the fields must be filled.'})
+            raise ValidationError({ 'health_log': 'At least one of the fields must be filled.' })
 
     def __str__(self):
         return f'Health log for { self.user.username } on { self.date }'

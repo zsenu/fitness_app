@@ -1,32 +1,33 @@
-from datetime    import date, timedelta
-from decimal     import Decimal
-from core.models import MIN_AGE,                      MAX_AGE
-from core.models import MIN_HEIGHT,                   MAX_HEIGHT
-from core.models import MIN_WEIGHT,                   MAX_WEIGHT
-from core.models import MIN_TARGET_CALORIES,          MAX_TARGET_CALORIES
-from core.models import GENDER_CHOICES
+from datetime     import timedelta
+from django.utils import timezone
+from decimal      import Decimal
+from core.models  import MIN_AGE,                      MAX_AGE
+from core.models  import MIN_HEIGHT,                   MAX_HEIGHT
+from core.models  import MIN_WEIGHT,                   MAX_WEIGHT
+from core.models  import MIN_TARGET_CALORIES,          MAX_TARGET_CALORIES
+from core.models  import GENDER_CHOICES
 
-from core.models import MIN_HOURS_SLEPT,              MAX_HOURS_SLEPT
-from core.models import MIN_LIQUID_CONSUMED,          MAX_LIQUID_CONSUMED
+from core.models  import MIN_HOURS_SLEPT,              MAX_HOURS_SLEPT
+from core.models  import MIN_LIQUID_CONSUMED,          MAX_LIQUID_CONSUMED
 
-from core.models import MIN_CALORIE_CONTENT,          MAX_CALORIE_CONTENT
-from core.models import MIN_NUTRIENT_CONTENT,         MAX_NUTRIENT_CONTENT
-from core.models import MIN_FOOD_ENTRY_QUANTITY,      MealType
+from core.models  import MIN_CALORIE_CONTENT,          MAX_CALORIE_CONTENT
+from core.models  import MIN_NUTRIENT_CONTENT,         MAX_NUTRIENT_CONTENT
+from core.models  import MIN_FOOD_ENTRY_QUANTITY,      MealType
 
-from core.models import MIN_EXERCISE_WEIGHT,          MAX_EXERCISE_WEIGHT
-from core.models import MIN_EXERCISE_REPS
+from core.models  import MIN_EXERCISE_WEIGHT,          MAX_EXERCISE_WEIGHT
+from core.models  import MIN_EXERCISE_REPS
 
-from core.models import MIN_EXERCISE_CALORIES_BURNED, MAX_EXERCISE_CALORIES_BURNED
-from core.models import MIN_EXERCISE_DURATION,        MAX_EXERCISE_DURATION
+from core.models  import MIN_EXERCISE_CALORIES_BURNED, MAX_EXERCISE_CALORIES_BURNED
+from core.models  import MIN_EXERCISE_DURATION,        MAX_EXERCISE_DURATION
 
 """
 Dates (day after tomorrow because there's a one-day leeway for log dates)
 """
-TODAY                = date.today()
-DAY_AFTER_TOMORROW   = date.today() + timedelta(days = 2)
-CORRECT_BIRTH_DATE   = date.today() - timedelta(days = 365 * (MIN_AGE + 1))
-TOO_YOUNG_BIRTH_DATE = date.today() - timedelta(days = 365 * (MIN_AGE - 1))
-TOO_OLD_BIRTH_DATE   = date.today() - timedelta(days = 365 * (MAX_AGE + 2))
+TODAY                = timezone.localdate()
+DAY_AFTER_TOMORROW   = timezone.localdate() + timedelta(days = 2)
+CORRECT_BIRTH_DATE   = timezone.localdate() - timedelta(days = 365 * (MIN_AGE + 1))
+TOO_YOUNG_BIRTH_DATE = timezone.localdate() - timedelta(days = 365 * (MIN_AGE - 1))
+TOO_OLD_BIRTH_DATE   = timezone.localdate() - timedelta(days = 365 * (MAX_AGE + 2))
 
 """
 Preset CustomUser data
@@ -39,6 +40,7 @@ VALID_CUSTOM_USER_DATA = {
     'birth_date':      CORRECT_BIRTH_DATE,
     'height':          MIN_HEIGHT,
     'starting_weight': MAX_WEIGHT,
+    'activity_level':  'sedentary',
     'target_weight':   MIN_WEIGHT,
     'target_date':     DAY_AFTER_TOMORROW,
     'target_calories': MIN_TARGET_CALORIES
@@ -83,6 +85,11 @@ def get_too_light_custom_user_data():
 def get_too_heavy_custom_user_data():
     data = VALID_CUSTOM_USER_DATA.copy()
     data['starting_weight'] = MAX_WEIGHT + Decimal('0.01')
+    return data
+
+def get_invalid_activity_level_custom_user_data():
+    data = VALID_CUSTOM_USER_DATA.copy()
+    data['activity_level'] = 'invalid_activity_level'
     return data
 
 def get_too_low_target_weight_custom_user_data():
@@ -209,9 +216,9 @@ def get_too_high_nutrients_food_item_data():
 
 def get_too_high_total_nutrients_food_item_data():
     data = VALID_FOOD_ITEM_DATA.copy()
-    data['fat']           = MAX_NUTRIENT_CONTENT + Decimal('23.35')
-    data['carbohydrates'] = MAX_NUTRIENT_CONTENT + Decimal('23.33')
-    data['protein']       = MAX_NUTRIENT_CONTENT + Decimal('23.33')
+    data['fat']           = Decimal('33.34')
+    data['carbohydrates'] = Decimal('33.34')
+    data['protein']       = Decimal('33.34')
     return data
 
 """

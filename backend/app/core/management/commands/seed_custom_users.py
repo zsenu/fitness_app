@@ -16,6 +16,7 @@ class Command(BaseCommand):
                 'birth_date':      date(2000, 1, 1),
                 'height':          180,
                 'starting_weight': Decimal('75.00'),
+                'activity_level':  'sedentary',
                 'target_weight':   Decimal('70.00'),
                 'target_date':     date(2026, 12, 31),
                 'target_calories': Decimal('2000.00'),
@@ -35,6 +36,7 @@ class Command(BaseCommand):
                     'birth_date':      item['birth_date'],
                     'height':          item['height'],
                     'starting_weight': item['starting_weight'],
+                    'activity_level':  item['activity_level'],
                     'target_weight':   item['target_weight'],
                     'target_date':     item['target_date'],
                     'target_calories': item['target_calories'],
@@ -51,6 +53,7 @@ class Command(BaseCommand):
                 obj.birth_date      = item['birth_date']
                 obj.height          = item['height']
                 obj.starting_weight = item['starting_weight']
+                obj.activity_level  = item['activity_level']
                 obj.target_weight   = item['target_weight']
                 obj.target_date     = item['target_date']
                 obj.target_calories = item['target_calories']

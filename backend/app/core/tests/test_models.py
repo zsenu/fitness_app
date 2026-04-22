@@ -8,7 +8,7 @@ from   core.models                import CardioExercise, CardioTraining, CardioS
 import core.tests.fixtures_models as fixtures
 
 """
-User-related model tests
+CustomUser-related model tests
 """
 def create_custom_user(data):
     password = data.pop('password')
@@ -58,6 +58,11 @@ class CustomUserModelTests(TestCase):
             create_custom_user(fixtures.get_too_heavy_custom_user_data())
         self.assertIn('starting_weight', context.exception.message_dict)
 
+    def test_create_invalid_activity_level_custom_user(self):
+        with self.assertRaises(ValidationError) as context:
+            create_custom_user(fixtures.get_invalid_activity_level_custom_user_data())
+        self.assertIn('activity_level', context.exception.message_dict)
+
     def test_create_too_low_target_weight_custom_user(self):
         with self.assertRaises(ValidationError) as context:
             create_custom_user(fixtures.get_too_low_target_weight_custom_user_data())
@@ -77,6 +82,11 @@ class CustomUserModelTests(TestCase):
         with self.assertRaises(ValidationError) as context:
             create_custom_user(fixtures.get_too_high_target_calories_custom_user_data())
         self.assertIn('target_calories', context.exception.message_dict)
+
+    def test_check_properties(self):
+        custom_user = create_custom_user(fixtures.get_valid_custom_user_data())
+        self.assertEqual(2190, custom_user.bmr)
+        self.assertEqual(2628, custom_user.tdee)
 
 """
 Health-related model tests
