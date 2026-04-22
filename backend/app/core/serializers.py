@@ -155,7 +155,7 @@ class RegisterSerializer(FullValidationMixin):
         user.save()
 
         return user
-    
+
 """
 Health-related serializers
 """
