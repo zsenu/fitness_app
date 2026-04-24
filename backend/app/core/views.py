@@ -1,21 +1,21 @@
-from rest_framework                 import status
-from rest_framework.views           import APIView
-from rest_framework.permissions     import IsAuthenticated
-from rest_framework.response        import Response
-from rest_framework.generics        import get_object_or_404
-from rest_framework.generics        import ListAPIView,     CreateAPIView,         ListCreateAPIView
-from rest_framework.generics        import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework             import status
+from rest_framework.views       import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response    import Response
+from rest_framework.generics    import get_object_or_404
+from rest_framework.generics    import ListAPIView,     CreateAPIView,         ListCreateAPIView
+from rest_framework.generics    import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
 
-from core.models                    import HealthLog
-from core.models                    import FoodItem,       FoodLog,          FoodEntry
-from core.models                    import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
-from core.models                    import CardioExercise, CardioSet,        CardioTraining
+from core.models                import HealthLog
+from core.models                import FoodItem,       FoodLog,          FoodEntry
+from core.models                import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
+from core.models                import CardioExercise, CardioSet,        CardioTraining
 
-from core.serializers               import HealthLogSerializer
-from core.serializers               import RegisterSerializer,       UserSerializer
-from core.serializers               import FoodItemSerializer,       FoodLogSerializer,     FoodEntrySerializer
-from core.serializers               import MuscleGroupSerializer,    StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
-from core.serializers               import CardioExerciseSerializer, CardioSetSerializer,   CardioTrainingSerializer
+from core.serializers           import HealthLogSerializer
+from core.serializers           import RegisterSerializer,       UserSerializer
+from core.serializers           import FoodItemSerializer,       FoodLogSerializer,     FoodEntrySerializer
+from core.serializers           import MuscleGroupSerializer,    StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
+from core.serializers           import CardioExerciseSerializer, CardioSetSerializer,   CardioTrainingSerializer
 
 """
 Abstract views to apply certain behaviors

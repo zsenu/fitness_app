@@ -1,13 +1,13 @@
-from rest_framework                 import serializers
-from django.contrib.auth            import get_user_model, password_validation
-from django.core.exceptions         import ValidationError as DjangoValidationError
+from rest_framework         import serializers
+from django.contrib.auth    import get_user_model, password_validation
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
-from core.models                    import HealthLog
-from core.models                    import FoodItem,       FoodLog,          FoodEntry
-from core.models                    import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
-from core.models                    import CardioExercise, CardioSet,        CardioTraining
+from core.models            import HealthLog
+from core.models            import FoodItem,       FoodLog,          FoodEntry
+from core.models            import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
+from core.models            import CardioExercise, CardioSet,        CardioTraining
 
 """
 Abstract serializers to apply certain behaviors
