@@ -140,7 +140,14 @@ class HealthLogModelTests(TestCase):
         with self.assertRaises(ValidationError) as context:
             self.create_health_log(fixtures.get_too_high_liquid_consumed_health_log_data())
         self.assertIn('liquid_consumed', context.exception.message_dict)
-        
+
+    def test_mutate_date_of_health_log(self):
+        health_log = self.create_health_log(fixtures.get_valid_health_log_data())
+        with self.assertRaises(ValidationError) as context:
+            health_log.date = fixtures.get_future_date_health_log_data()['date']
+            health_log.full_clean()
+        self.assertIn('date', context.exception.message_dict)
+
 """
 Food-related model tests
 """
@@ -196,6 +203,13 @@ class FoodLogModelTests(TestCase):
     def test_create_future_food_log(self):
         with self.assertRaises(ValidationError) as context:
             create_food_log(fixtures.get_future_date_food_log_data(), self.correct_custom_user)
+        self.assertIn('date', context.exception.message_dict)
+
+    def test_mutate_date_of_food_log(self):
+        food_log = create_food_log(fixtures.get_valid_food_log_data(), self.correct_custom_user)
+        with self.assertRaises(ValidationError) as context:
+            food_log.date = fixtures.get_future_date_food_log_data()['date']
+            food_log.full_clean()
         self.assertIn('date', context.exception.message_dict)
 
 class FoodEntryModelTests(TestCase):
@@ -295,6 +309,13 @@ class StrengthTrainingModelTests(TestCase):
             create_strength_training(fixtures.get_future_date_strength_training_data(), self.correct_custom_user)
         self.assertIn('date', context.exception.message_dict)
 
+    def test_mutate_date_of_strength_training(self):
+        strength_training = create_strength_training(fixtures.get_valid_strength_training_data(), self.correct_custom_user)
+        with self.assertRaises(ValidationError) as context:
+            strength_training.date = fixtures.get_future_date_strength_training_data()['date']
+            strength_training.full_clean()
+        self.assertIn('date', context.exception.message_dict)
+
 class StrengthSetModelTests(TestCase):
     def setUp(self):
         self.correct_custom_user = create_custom_user(fixtures.get_valid_custom_user_data())
@@ -378,6 +399,13 @@ class CardioTrainingModelTests(TestCase):
     def test_create_future_cardio_training(self):
         with self.assertRaises(ValidationError) as context:
             create_cardio_training(fixtures.get_future_date_cardio_training_data(), self.correct_custom_user)
+        self.assertIn('date', context.exception.message_dict)
+
+    def test_mutate_date_of_cardio_training(self):
+        cardio_training = create_cardio_training(fixtures.get_valid_cardio_training_data(), self.correct_custom_user)
+        with self.assertRaises(ValidationError) as context:
+            cardio_training.date = fixtures.get_future_date_cardio_training_data()['date']
+            cardio_training.full_clean()
         self.assertIn('date', context.exception.message_dict)
 
 class CardioSetModelTests(TestCase):

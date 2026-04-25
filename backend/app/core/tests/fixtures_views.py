@@ -88,9 +88,9 @@ def get_immutable_field_overwrite_profile_payload():
 Preset HealthLogView payloads
 """
 VALID_HEALTH_LOG_PAYLOAD = {
-    'date': str(TODAY),
-    'bodyweight': MIN_WEIGHT,
-    'hours_slept': MIN_HOURS_SLEPT,
+    'date':            str(TODAY),
+    'bodyweight':      MIN_WEIGHT,
+    'hours_slept':     MIN_HOURS_SLEPT,
     'liquid_consumed': MIN_LIQUID_CONSUMED
 }
 
@@ -118,16 +118,16 @@ def get_invalid_health_log_payload():
 
 def get_valid_health_log_update_payload():
     payload = {
-        'bodyweight': MIN_WEIGHT + 5,
-        'hours_slept': MIN_HOURS_SLEPT + 1,
+        'bodyweight':      MIN_WEIGHT + 5,
+        'hours_slept':     MIN_HOURS_SLEPT + 1,
         'liquid_consumed': MIN_LIQUID_CONSUMED + 1
     }
     return payload
 
 def get_invalid_health_log_update_payload():
     payload = {
-        'bodyweight': MAX_WEIGHT + 10,
-        'hours_slept': MAX_HOURS_SLEPT + 5,
+        'bodyweight':      MAX_WEIGHT + 10,
+        'hours_slept':     MAX_HOURS_SLEPT + 5,
         'liquid_consumed': MAX_LIQUID_CONSUMED + 5
     }
     return payload
@@ -136,21 +136,21 @@ def get_invalid_health_log_update_payload():
 Preset FoodItemView payloads
 """
 VALID_FOOD_ITEM_PAYLOAD = {
-    'name': 'Test Food Item',
-    'description': 'This is a test food item with valid calorie and nutrient contents',
-    'calories': MIN_CALORIE_CONTENT,
-    'fat': MIN_NUTRIENT_CONTENT,
-    'carbohydrates': MIN_NUTRIENT_CONTENT,
-    'protein': MIN_NUTRIENT_CONTENT
+    'name':          'Test Food Item',
+    'description':   'This is a test food item with valid calorie and nutrient contents',
+    'calories':      Decimal('100.00'),
+    'fat':           Decimal('10.00'),
+    'carbohydrates': Decimal('10.00'),
+    'protein':       Decimal('10.00')
 }
 
 TOO_HIGH_NUTRIENTS_FOOD_ITEM_PAYLOAD = {
-    'name': 'Test Food Item',
-    'description': 'This food item has a total nutrient content of over 100 grams per 100 grams',
-    'calories': MIN_CALORIE_CONTENT,
-    'fat': Decimal('34.00'),
+    'name':          'Test Food Item',
+    'description':   'This food item has a total nutrient content of over 100 grams per 100 grams',
+    'calories':      MIN_CALORIE_CONTENT,
+    'fat':           Decimal('34.00'),
     'carbohydrates': Decimal('34.00'),
-    'protein': Decimal('34.00')
+    'protein':       Decimal('34.00')
 }
 
 """
@@ -171,11 +171,252 @@ def get_too_high_nutrient_food_item_payload():
 def get_missing_name_food_item_payload():
     return {
         'description': 'This food item is missing a name',
-        'calories': MIN_CALORIE_CONTENT
+        'calories':    MIN_CALORIE_CONTENT
     }
 
 def get_missing_calorie_food_item_payload():
     return {
-        'name': 'Test Food Item',
+        'name':        'Test Food Item',
         'description': 'This food item is missing calorie content'
     }
+
+"""
+Preset FoodLogView payloads
+"""
+VALID_FOOD_LOG_PAYLOAD = {
+    'date': str(TODAY)
+}
+
+"""
+Factory methods for FoodLogView payloads
+"""
+def get_valid_food_log_payload():
+    return VALID_FOOD_LOG_PAYLOAD.copy()
+
+def get_future_date_food_log_payload():
+    payload = VALID_FOOD_LOG_PAYLOAD.copy()
+    payload['date'] = str(DAY_AFTER_TOMORROW)
+    return payload
+
+"""
+Preset FoodEntryView payloads
+"""
+INCOMPLETE_FOOD_ENTRY_PAYLOAD = {
+    'meal_type':    'breakfast',
+    'food_item_id': None,
+    'quantity':     Decimal('200.00')
+}
+
+EXPECTED_BREAKFAST_MACROS = {
+    'calories':      Decimal('200.00'),
+    'fat':           Decimal('20.00'),
+    'carbohydrates': Decimal('20.00'),
+    'protein':       Decimal('20.00')
+}
+
+VALID_FOOD_ENTRY_UPDATE_PAYLOAD = {
+    'quantity':     MIN_FOOD_ENTRY_QUANTITY + 1
+}
+
+INVALID_FOOD_ENTRY_UPDATE_PAYLOAD = {
+    'quantity':     MIN_FOOD_ENTRY_QUANTITY - 1
+}
+
+"""
+Factory methods for FoodEntryView payloads
+"""
+def get_food_entry_payload(food_item_id = None):
+    payload = INCOMPLETE_FOOD_ENTRY_PAYLOAD.copy()
+    payload['food_item_id'] = food_item_id
+    return payload
+
+def get_expected_breakfast_macros():
+    return EXPECTED_BREAKFAST_MACROS.copy()
+
+def get_invalid_quantity_food_entry_payload(food_item_id = None):
+    payload = get_food_entry_payload(food_item_id)
+    payload['quantity'] = MIN_FOOD_ENTRY_QUANTITY - 1
+    return payload
+
+def get_invalid_meal_type_food_entry_payload(food_item_id = None):
+    payload = get_food_entry_payload(food_item_id)
+    payload['meal_type'] = 'invalid_meal_type'
+    return payload
+
+def get_valid_food_entry_update_payload():
+    return VALID_FOOD_ENTRY_UPDATE_PAYLOAD.copy()
+
+def get_invalid_food_entry_update_payload():
+    return INVALID_FOOD_ENTRY_UPDATE_PAYLOAD.copy()
+
+"""
+Preset MuscleGroup data
+"""
+MUSCLE_GROUP_DATA = {
+    'name': 'Test Muscle Group'
+}
+
+"""
+Factory methods for MuscleGroup data
+"""
+def get_muscle_group_data(name = None):
+    data = MUSCLE_GROUP_DATA.copy()
+    if name is not None:
+        data['name'] = name
+    return data
+
+"""
+Preset StrengthExerciseView payloads
+"""
+VALID_STRENGTH_EXERCISE_PAYLOAD = {
+    'name':             'Test Strength Exercise',
+    'description':      'This is a test strength exercise with valid muscle group associations',
+    'target_muscle_group_ids': []
+}
+
+"""
+Factory methods for StrengthExerciseView payloads
+"""
+def get_valid_strength_exercise_payload(target_muscle_group_ids = None):
+    payload = VALID_STRENGTH_EXERCISE_PAYLOAD.copy()
+    if target_muscle_group_ids is not None:
+        payload['target_muscle_group_ids'] = target_muscle_group_ids
+    return payload
+
+def get_invalid_strength_exercise_payload():
+    payload = {
+        'description': 'Required fields are not provided here.'
+    }
+    return payload
+
+"""
+Preset StrengthTrainingView payloads
+"""
+VALID_STRENGTH_TRAINING_PAYLOAD = {
+    'date': str(TODAY)
+}
+
+"""
+Factory methods for StrengthTrainingView payloads
+"""
+def get_valid_strength_training_payload():
+    return VALID_STRENGTH_TRAINING_PAYLOAD.copy()
+
+def get_future_date_strength_training_payload():
+    payload = VALID_STRENGTH_TRAINING_PAYLOAD.copy()
+    payload['date'] = str(DAY_AFTER_TOMORROW)
+    return payload
+
+"""
+Preset StrengthSetView payloads
+"""
+VALID_STRENGTH_SET_PAYLOAD = {
+    'exercise_id': None,
+    'weight':      MIN_EXERCISE_WEIGHT,
+    'reps':        MIN_EXERCISE_REPS,
+}
+
+INVALID_STRENGTH_SET_PAYLOAD = {
+    'exercise_id': None,
+    'weight':      MIN_EXERCISE_WEIGHT - 1,
+    'reps':        MIN_EXERCISE_REPS - 1,
+}
+
+"""
+Factory methods for StrengthSetView payloads
+"""
+def get_valid_strength_set_payload(exercise_id = None):
+    payload = VALID_STRENGTH_SET_PAYLOAD.copy()
+    payload['exercise_id'] = exercise_id
+    return payload
+
+def get_invalid_strength_set_payload(exercise_id = None):
+    payload = INVALID_STRENGTH_SET_PAYLOAD.copy()
+    payload['exercise_id'] = exercise_id
+    return payload
+
+def get_valid_strength_set_update_payload():
+    payload = {
+        'weight': MIN_EXERCISE_WEIGHT + 10,
+        'reps':   MIN_EXERCISE_REPS + 5
+    }
+    return payload
+
+def get_invalid_strength_set_update_payload():
+    payload = {
+        'weight': MIN_EXERCISE_WEIGHT - 1,
+        'reps':   MIN_EXERCISE_REPS - 1
+    }
+    return payload
+
+"""
+Preset CardioExerciseView payloads
+"""
+VALID_CARDIO_EXERCISE_PAYLOAD = {
+    'name':                'Test Cardio Exercise',
+    'description':         'This is a test cardio exercise',
+    'calories_per_minute': MAX_EXERCISE_CALORIES_BURNED
+}
+
+"""
+Factory methods for CardioExerciseView payloads
+"""
+def get_valid_cardio_exercise_payload():
+    return VALID_CARDIO_EXERCISE_PAYLOAD.copy()
+
+def get_invalid_cardio_exercise_payload():
+    payload = VALID_CARDIO_EXERCISE_PAYLOAD.copy()
+    payload['calories_per_minute'] = MIN_EXERCISE_CALORIES_BURNED - 1
+    return payload
+
+"""
+Preset CardioTrainingView payloads
+"""
+VALID_CARDIO_TRAINING_PAYLOAD = {
+    'date': str(TODAY)
+}
+
+"""
+Factory methods for CardioTrainingView payloads
+"""
+def get_valid_cardio_training_payload():
+    return VALID_CARDIO_TRAINING_PAYLOAD.copy()
+
+def get_future_date_cardio_training_payload():
+    payload = VALID_CARDIO_TRAINING_PAYLOAD.copy()
+    payload['date'] = str(DAY_AFTER_TOMORROW)
+    return payload
+
+"""
+Preset CardioSetView payloads
+"""
+VALID_CARDIO_SET_PAYLOAD = {
+    'exercise_id': None,
+    'duration':    MIN_EXERCISE_DURATION
+}
+
+"""
+Factory methods for CardioSetView payloads
+"""
+def get_valid_cardio_set_payload(exercise_id = None):
+    payload = VALID_CARDIO_SET_PAYLOAD.copy()
+    payload['exercise_id'] = exercise_id
+    return payload
+
+def get_invalid_cardio_set_payload(exercise_id = None):
+    payload = VALID_CARDIO_SET_PAYLOAD.copy()
+    payload['exercise_id'] = exercise_id
+    payload['duration'] = MIN_EXERCISE_DURATION - 1
+    return payload
+
+def get_valid_cardio_set_update_payload():
+    payload = {
+        'duration': MIN_EXERCISE_DURATION + 10
+    }
+    return payload
+
+def get_invalid_cardio_set_update_payload():
+    payload = {
+        'duration': MIN_EXERCISE_DURATION - 1
+    }
+    return payload
