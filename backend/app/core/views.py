@@ -1,21 +1,23 @@
-from rest_framework             import status
-from rest_framework.views       import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response    import Response
-from rest_framework.generics    import get_object_or_404
-from rest_framework.generics    import ListAPIView,     CreateAPIView,         ListCreateAPIView
-from rest_framework.generics    import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework                       import status
+from rest_framework.views                 import APIView
+from rest_framework.permissions           import IsAuthenticated
+from rest_framework.response              import Response
+from rest_framework.generics              import get_object_or_404
+from rest_framework.generics              import ListAPIView,               CreateAPIView,         ListCreateAPIView
+from rest_framework.generics              import RetrieveAPIView,           RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.tokens      import RefreshToken
 
-from core.models                import HealthLog
-from core.models                import FoodItem,       FoodLog,          FoodEntry
-from core.models                import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
-from core.models                import CardioExercise, CardioSet,        CardioTraining
+from core.models                          import HealthLog
+from core.models                          import FoodItem,       FoodLog,          FoodEntry
+from core.models                          import MuscleGroup,    StrengthExercise, StrengthSet, StrengthTraining
+from core.models                          import CardioExercise, CardioSet,        CardioTraining
 
-from core.serializers           import HealthLogSerializer
-from core.serializers           import RegisterSerializer,       UserSerializer
-from core.serializers           import FoodItemSerializer,       FoodLogSerializer,     FoodEntrySerializer
-from core.serializers           import MuscleGroupSerializer,    StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
-from core.serializers           import CardioExerciseSerializer, CardioSetSerializer,   CardioTrainingSerializer
+from core.serializers                     import HealthLogSerializer
+from core.serializers                     import RegisterSerializer,       UserSerializer
+from core.serializers                     import FoodItemSerializer,       FoodLogSerializer,     FoodEntrySerializer
+from core.serializers                     import MuscleGroupSerializer,    StrengthExerciseSerializer, StrengthSetSerializer, StrengthTrainingSerializer
+from core.serializers                     import CardioExerciseSerializer, CardioSetSerializer,   CardioTrainingSerializer
 
 """
 Abstract views to apply certain behaviors
@@ -55,6 +57,61 @@ class UserProfileView(RetrieveUpdateAPIView):
     
 class RegisterView(CreateAPIView):
     serializer_class = RegisterSerializer
+
+class LoginView(APIView):
+    def post(self, request):
+        serializer = TokenObtainPairSerializer(data = request.data)
+
+        try:
+            serializer.is_valid(raise_exception = True)
+        except Exception:
+            return Response({ 'detail': 'Invalid credentials' }, status = status.HTTP_401_UNAUTHORIZED)
+        
+        access_token = serializer.validated_data['access']
+        refresh_token = serializer.validated_data['refresh']
+
+        response = Response({ 'access': access_token }, status = status.HTTP_200_OK)
+        response.set_cookie(
+            key = 'refresh_token',
+            value = refresh_token,
+            httponly = True,
+            secure = True,
+            samesite = 'None',
+            path = '/'
+        )
+
+        return response
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token is not None:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass
+
+        response = Response({ 'detail': 'Logged out successfully' }, status = status.HTTP_200_OK)
+        response.delete_cookie('refresh_token', path = '/')
+        return response
+
+class TokenRefreshView(APIView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token is None:
+            return Response({ 'detail': 'Refresh token not provided' }, status = status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = TokenRefreshSerializer(data = { 'refresh': refresh_token })
+        try:
+            serializer.is_valid(raise_exception = True)
+        except Exception:
+            return Response({ 'detail': 'Invalid refresh token' }, status = status.HTTP_401_UNAUTHORIZED)
+        
+        access_token = serializer.validated_data['access']
+        return Response({ 'access': access_token }, status = status.HTTP_200_OK)
 
 """
 Health-related views

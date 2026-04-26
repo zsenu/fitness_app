@@ -1,7 +1,7 @@
 import os
 import dj_database_url
-from pathlib                                 import Path
-from datetime                                import timedelta
+from pathlib           import Path
+from datetime          import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -12,6 +12,8 @@ if os.environ.get("RENDER") is None:
 SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG') == 'True'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOW__CREDENTIALS = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'core'
 ]
 AUTH_USER_MODEL = 'core.CustomUser'

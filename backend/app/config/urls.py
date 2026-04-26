@@ -1,9 +1,8 @@
 from django.contrib                 import admin
 from django.urls                    import path
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 from core.views                     import HealthCheckView
-from core.views                     import RegisterView,             UserProfileView
+from core.views                     import RegisterView,             UserProfileView,            LoginView,                  LogoutView, TokenRefreshView
 from core.views                     import HealthLogListView,        HealthLogDetailView,        HealthLogByDateView
 from core.views                     import FoodItemListView,         FoodItemDetailView
 from core.views                     import FoodLogListView,          FoodLogDetailView,          FoodLogByDateView
@@ -21,7 +20,9 @@ urlpatterns = [
     path('admin/',                                    admin.site.urls,                      name = 'admin'),
 
     path('api/auth/register/',                        RegisterView.as_view(),               name = 'register'),
-    path('api/auth/login/',                           TokenObtainPairView.as_view(),        name = 'login'),
+    path('api/auth/login/',                           LoginView.as_view(),                  name = 'login'),
+    path('api/auth/logout/',                          LogoutView.as_view(),                 name = 'logout'),
+    path('api/auth/refresh/',                         TokenRefreshView.as_view(),           name = 'token-refresh'),
     path('api/profiles/me/',                          UserProfileView.as_view(),            name = 'user-profile'),
 
     path('api/health-logs/',                          HealthLogListView.as_view(),          name = 'health-log-list'),
