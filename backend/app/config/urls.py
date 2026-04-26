@@ -1,19 +1,19 @@
-from django.contrib                 import admin
-from django.urls                    import path
+from django.contrib import admin
+from django.urls    import path
 
-from core.views                     import HealthCheckView
-from core.views                     import RegisterView,             UserProfileView,            LoginView,                  LogoutView, TokenRefreshView
-from core.views                     import HealthLogListView,        HealthLogDetailView,        HealthLogByDateView
-from core.views                     import FoodItemListView,         FoodItemDetailView
-from core.views                     import FoodLogListView,          FoodLogDetailView,          FoodLogByDateView
-from core.views                     import FoodEntryListView,        FoodEntryDetailView
-from core.views                     import MuscleGroupListView
-from core.views                     import StrengthExerciseListView, StrengthExerciseDetailView
-from core.views                     import StrengthSetListView,      StrengthSetDetailView
-from core.views                     import StrengthTrainingListView, StrengthTrainingDetailView, StrengthTrainingByDateView
-from core.views                     import CardioExerciseListView,   CardioExerciseDetailView
-from core.views                     import CardioSetListView,        CardioSetDetailView
-from core.views                     import CardioTrainingListView,   CardioTrainingDetailView,   CardioTrainingByDateView
+from core.views     import HealthCheckView
+from core.views     import RegisterView,             UserProfileView,            LoginView,                  LogoutView, TokenRefreshView
+from core.views     import HealthLogListView,        HealthLogDetailView,        HealthLogByDateView
+from core.views     import FoodItemListView,         FoodItemDetailView
+from core.views     import FoodLogListView,          FoodLogDetailView,          FoodLogByDateView
+from core.views     import FoodEntryListView,        FoodEntryDetailView
+from core.views     import MuscleGroupListView
+from core.views     import StrengthExerciseListView, StrengthExerciseDetailView
+from core.views     import StrengthSetListView,      StrengthSetDetailView
+from core.views     import StrengthTrainingListView, StrengthTrainingDetailView, StrengthTrainingByDateView
+from core.views     import CardioExerciseListView,   CardioExerciseDetailView
+from core.views     import CardioSetListView,        CardioSetDetailView
+from core.views     import CardioTrainingListView,   CardioTrainingDetailView,   CardioTrainingByDateView
 
 urlpatterns = [
     path('health/',                                   HealthCheckView.as_view(),            name = 'health-check'),
