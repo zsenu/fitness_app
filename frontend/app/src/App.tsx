@@ -5,7 +5,6 @@ import ProfilePage                      from './pages/ProfilePage.tsx';
 import AboutPage                        from './pages/AboutPage.tsx';
 
 function App() {
-
     return (
         <>
             <BrowserRouter>
