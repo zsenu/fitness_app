@@ -6,22 +6,9 @@ export interface ValidationErrorResponse {
     [field : string]: string[];
 }
 
-export interface CustomUser {
-    username:        string;
-    email:           string;
-    gender:          string;
-    birth_date:      string;
-    height:          number;
-    starting_weight: number;
-    activity_level:  string;
-    target_weight:   number;
-    target_date:     string;
-    target_calories: number;
-}
-
 export interface AuthState {
     isAuthenticated: boolean;
-    userProfile:     CustomUser | null;
+    userProfile:     ProfileDataType | null;
     accessToken:     string | null;
     loading:         boolean;
     error:           string | null;

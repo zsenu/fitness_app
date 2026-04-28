@@ -2,6 +2,43 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
 import type { ErrorResponse, ValidationErrorResponse, LoginDataType, RegisterDataType, ProfileDataType } from '../../interfaces/interfaces';
 
+export const fetchUserProfile = createAsyncThunk<
+    { profile: ProfileDataType },
+    void,
+    { rejectValue: ErrorResponse }
+>(
+    'auth/fetchUserProfile',
+    async (
+        _,
+        thunkAPI
+    ) => {
+        const state: RootState = thunkAPI.getState() as RootState;
+        const token = state.auth.accessToken;
+        try {
+            const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/profiles/me/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${ token }`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch user profile.');
+            }
+
+            const profile: ProfileDataType = await response.json();
+            return { profile };
+        }
+        catch (error: unknown) {
+            if (error instanceof Error) {
+                return thunkAPI.rejectWithValue({ detail: error.message });
+            }
+            return thunkAPI.rejectWithValue({ detail: 'An unknown error occurred.' });
+        }
+    }
+);
+
 export const login = createAsyncThunk<
     { access: string; profile: ProfileDataType }, 
     LoginDataType,

@@ -1,6 +1,6 @@
 import { createSlice }    from '@reduxjs/toolkit';
 import type { AuthState } from '../../interfaces/interfaces';
-import { register, login, logout }  from '../thunks/authThunk';
+import { fetchUserProfile, login, logout, register }  from '../thunks/authThunk';
 
 const initialState: AuthState = {
     isAuthenticated: false,
@@ -16,6 +16,20 @@ const authSlice = createSlice({
     reducers: { },
     extraReducers: (builder) => {
         builder
+            // FETCH USER PROFILE
+            .addCase(fetchUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchUserProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                state.userProfile = action.payload.profile;
+            })
+            .addCase(fetchUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.detail as string;
+            })
+            
             // LOGIN
             .addCase(login.pending, (state) => {
                 state.loading = true;
