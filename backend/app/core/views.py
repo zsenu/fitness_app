@@ -7,6 +7,8 @@ from rest_framework.generics              import ListAPIView,               Crea
 from rest_framework.generics              import RetrieveAPIView,           RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.tokens      import RefreshToken
+from django.utils.decorators              import method_decorator
+from django.views.decorators.csrf         import csrf_exempt
 
 from core.models                          import HealthLog
 from core.models                          import FoodItem,       FoodLog,          FoodEntry
@@ -58,6 +60,7 @@ class UserProfileView(RetrieveUpdateAPIView):
 class RegisterView(CreateAPIView):
     serializer_class = RegisterSerializer
 
+@method_decorator(csrf_exempt, name = 'dispatch')
 class LoginView(APIView):
     def post(self, request):
         serializer = TokenObtainPairSerializer(data = request.data)
@@ -76,12 +79,13 @@ class LoginView(APIView):
             value = refresh_token,
             httponly = True,
             secure = True,
-            samesite = 'None',
+            samesite = 'Lax',
             path = '/'
         )
 
         return response
 
+@method_decorator(csrf_exempt, name = 'dispatch')
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -98,11 +102,12 @@ class LogoutView(APIView):
         response.delete_cookie('refresh_token', path = '/')
         return response
 
+@method_decorator(csrf_exempt, name = 'dispatch')
 class TokenRefreshView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
         if refresh_token is None:
-            return Response({ 'detail': 'Refresh token not provided' }, status = status.HTTP_401_UNAUTHORIZED)
+            return Response({ 'detail': 'Refresh token not found' }, status = status.HTTP_404_NOT_FOUND)
         
         serializer = TokenRefreshSerializer(data = { 'refresh': refresh_token })
         try:

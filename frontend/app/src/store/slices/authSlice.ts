@@ -1,6 +1,6 @@
 import { createSlice }    from '@reduxjs/toolkit';
 import type { AuthState } from '../../interfaces/interfaces';
-import { fetchUserProfile, login, logout, register }  from '../thunks/authThunk';
+import { fetchUserProfile, login, logout, register, bootstrapAuth }  from '../thunks/authThunk';
 
 const initialState: AuthState = {
     isAuthenticated: false,
@@ -29,7 +29,7 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload?.detail as string;
             })
-            
+
             // LOGIN
             .addCase(login.pending, (state) => {
                 state.loading = true;
@@ -76,6 +76,18 @@ const authSlice = createSlice({
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.detail as string;
+            })
+
+            // BOOTSTRAP USER
+            .addCase(bootstrapAuth.fulfilled, (state, action) => {
+                state.isAuthenticated = true;
+                state.accessToken = action.payload.access;
+                state.userProfile = action.payload.profile;
+            })
+            .addCase(bootstrapAuth.rejected, (state) => {
+                state.isAuthenticated = false;
+                state.accessToken = null;
+                state.userProfile = null;
             });
     }
 });
