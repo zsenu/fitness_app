@@ -4,7 +4,7 @@ import NavBar from '../components/NavBar';
 
 function AboutPage() {
     return (
-    <Box sx = {{ maxWidth: 900, mx: 'auto', p: 3 }}>
+    <>
         <NavBar parent = 'about' />
         <Typography variant = 'h4' gutterBottom>
             About Fitness & Health
@@ -140,7 +140,7 @@ function AboutPage() {
                 </Typography>
             </AccordionDetails>
         </Accordion>
-    </Box>
+    </>
     );
 };
 
