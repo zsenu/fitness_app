@@ -9,6 +9,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SECRET_KEY: dummy_secret_key
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+  CORS_ALLOWED_ORIGINS: https://fitness-app-react-hoxz.onrender.com
 
 jobs:
   test:
