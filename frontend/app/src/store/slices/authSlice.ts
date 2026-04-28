@@ -1,6 +1,6 @@
 import { createSlice }    from '@reduxjs/toolkit';
 import type { AuthState } from '../../interfaces/interfaces';
-import { login, logout }  from '../thunks/authThunk';
+import { register, login, logout }  from '../thunks/authThunk';
 
 const initialState: AuthState = {
     isAuthenticated: false,
@@ -29,7 +29,7 @@ const authSlice = createSlice({
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                state.error = action.payload?.detail as string;
             })
             
             // LOGOUT
@@ -46,6 +46,22 @@ const authSlice = createSlice({
             .addCase(logout.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+            })
+
+            // REGISTER
+            .addCase(register.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(register.fulfilled, (state, action) => {
+                state.loading = false;
+                state.isAuthenticated = true;
+                state.accessToken = action.payload.access;
+                state.userProfile = action.payload.profile;
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.detail as string;
             });
     }
 });

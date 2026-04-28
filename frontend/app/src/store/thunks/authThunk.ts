@@ -1,31 +1,36 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
+import type { ErrorResponse, ValidationErrorResponse, LoginDataType, RegisterDataType, ProfileDataType } from '../../interfaces/interfaces';
 
-const API_BASE = "http://localhost:8000/api";
-
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<
+    { access: string; profile: ProfileDataType }, 
+    LoginDataType,
+    { rejectValue: ErrorResponse }
+>(
     'auth/login',
     async (
-        { username, password }: { username: string; password: string },
+        loginData: LoginDataType,
         thunkAPI
     ) => {
         try {
 
-            const loginResponse = await fetch(`${ API_BASE }/auth/login/`, {
+            const loginResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/login/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify(loginData),
             });
 
-            if (!loginResponse.ok) { throw new Error('Login failed.'); }
+            if (!loginResponse.ok) {
+                const errorData: ErrorResponse = await loginResponse.json();
+                return thunkAPI.rejectWithValue(errorData);
+            }
 
-            const loginData = await loginResponse.json();
-            const token = loginData.access;
-            console.log(`LOGIN - data: ${ loginData }\nJSON data: ${ JSON.stringify(loginData) }`);
+            const loginResponseData = await loginResponse.json();
+            const token = loginResponseData.access;
 
-            const profileResponse = await fetch(`${ API_BASE }/auth/profiles/me/`, {
+            const profileResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/profiles/me/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -38,9 +43,12 @@ export const login = createAsyncThunk(
 
             return { access: token, profile: profileData };
 
-        } catch (error: unknown) {
-            if (error instanceof Error) { return thunkAPI.rejectWithValue(error.message); }
-            return thunkAPI.rejectWithValue('An unknown error occurred.');
+        }
+        catch (error: unknown) {
+            if (error instanceof Error) {
+                return thunkAPI.rejectWithValue({ detail: error.message });
+            }
+            return thunkAPI.rejectWithValue({ detail: 'An unknown error occurred.' });
         }
     }
 );
@@ -55,7 +63,7 @@ export const logout = createAsyncThunk(
         const token = state.auth.accessToken;
 
         try {
-            const response = await fetch(`${ API_BASE }/auth/logout/`, {
+            const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/logout/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,4 +79,67 @@ export const logout = createAsyncThunk(
             return thunkAPI.rejectWithValue('An unknown error occurred.');
         }
     }
+);
+
+export const register = createAsyncThunk<
+    { access: string; profile: ProfileDataType }, 
+    RegisterDataType,
+    { rejectValue: ValidationErrorResponse | ErrorResponse }
+>(
+    'auth/registerUser',
+    async (
+        registerData: RegisterDataType,
+        thunkAPI
+    ) => {
+        try {
+            const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/register/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(registerData),
+            });
+
+            if (!response.ok) {
+                const registerErrorData: ValidationErrorResponse = await response.json();
+                return thunkAPI.rejectWithValue(registerErrorData);
+            }
+
+            const loginData: LoginDataType = { username: registerData.username, password: registerData.password };
+            const loginResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/login/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loginData),
+            });
+
+            if (!loginResponse.ok) {
+                const loginEerrorData: ErrorResponse = await loginResponse.json();
+                return thunkAPI.rejectWithValue(loginEerrorData);
+            }
+
+            const loginResponseData = await loginResponse.json();
+            const token = loginResponseData.access;
+
+            const profileResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/profiles/me/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${ token }`,
+                },
+            });
+
+            if (!profileResponse.ok) { throw new Error('Failed to fetch user profile.'); }
+            const profileData = await profileResponse.json();
+
+            return { access: token, profile: profileData };
+    }
+    catch (error: unknown) {
+        if (error instanceof Error) {
+            return thunkAPI.rejectWithValue({ detail: error.message });
+        }
+        return thunkAPI.rejectWithValue({ detail: 'An unknown error occurred.' });
+    }
+  }
 );

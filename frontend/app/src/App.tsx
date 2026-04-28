@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage                      from './pages/LandingPage.tsx';
-import DashboardPage                    from './pages/DashboardPage.tsx';
-import ProfilePage                      from './pages/ProfilePage.tsx';
-import AboutPage                        from './pages/AboutPage.tsx';
+import LandingPage from './pages/LandingPage.tsx';
+import DashboardPage from './pages/DashboardPage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
+import AboutPage from './pages/AboutPage.tsx';
 
 function App() {
     return (
