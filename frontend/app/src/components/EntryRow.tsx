@@ -20,7 +20,7 @@ function EntryRow({ entry }: EntryRowProps) {
             </Box>
 
             <Box>
-                { Number( entry.food_item.calories ).toFixed(2) } kcal
+                { (Number(entry.food_item.calories) * Number(entry.quantity) / 100).toFixed(2) } kcal
             </Box>
         </Box>
     );

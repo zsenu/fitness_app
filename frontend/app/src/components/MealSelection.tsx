@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import type { FoodEntryType, MacrosType, MealType } from '../interfaces/interfaces';
 import MacrosDisplay from './MacrosDisplay.tsx';
 import EntryRow from './EntryRow.tsx';
+import AddFoodEntryModal from './AddFoodEntryModal.tsx';
 
 type MealSectionProps = {
     title: string;
@@ -11,6 +13,8 @@ type MealSectionProps = {
 };
 
 function MealSection({ title, mealType, entries, macros }: MealSectionProps) {
+    const [open, setOpen] = useState(false);
+
     return (
         <Box
             sx = {{
@@ -19,6 +23,11 @@ function MealSection({ title, mealType, entries, macros }: MealSectionProps) {
                 p: 1.5
             }}
         >
+            <AddFoodEntryModal
+                open = { open }
+                onClose = {() => setOpen(false)}
+                mealType = { mealType }
+            />
             <Box
                 sx = {{
                     display: 'flex',
@@ -31,10 +40,7 @@ function MealSection({ title, mealType, entries, macros }: MealSectionProps) {
                 <Button
                     size = 'small'
                     variant = 'contained'
-                    onClick = {() => {
-                        // later: open modal with mealType
-                        console.log('Add to:', mealType);
-                    }}
+                    onClick = {() => setOpen(true)}
                 >
                     Add
                 </Button>

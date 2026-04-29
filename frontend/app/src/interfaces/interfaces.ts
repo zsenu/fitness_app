@@ -86,6 +86,12 @@ export interface FoodItemType {
     protein: string;
 };
 
+export interface FoodItemState {
+    foodItems: FoodItemType[];
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+}
+
 export interface FoodEntryType {
     id: number;
     parent_log: number;
