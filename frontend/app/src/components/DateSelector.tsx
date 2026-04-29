@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store/store';
 import { incrementDate, decrementDate, setActiveDate } from '../store/slices/dashboardSlice.ts';
-import { AppBar, Toolbar, IconButton, Typography, Box, Dialog } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Typography, Box, Dialog, Button } from '@mui/material';
 
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -107,6 +107,17 @@ const DateSelector = () => {
                             onChange = { handleCalendarChange }
                             disableFuture = { false }
                         />
+                        <Button
+                            onClick = {() => {
+                                const today = new Date();
+                                const iso = today.toISOString().split('T')[0];
+                                dispatch(setActiveDate(iso));
+                                setOpen(false);
+                            }}
+                            sx = {{ mt: 1 }}
+                        >
+                            Today
+                        </Button>
                         { !!error && <Typography color = 'error' sx = {{ mt: 1 }}>{ error }</Typography> }
                     </LocalizationProvider>
                 </Box>

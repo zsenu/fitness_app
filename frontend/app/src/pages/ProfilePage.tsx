@@ -32,19 +32,6 @@ function ProfilePage() {
     const height: string | null = user?.height.toString() || null;
     const currentWeight: string | null = user?.current_weight.toString() || null;
 
-    const handleActivityLevelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setActivityLevel(event.target.value);
-    };
-    const handleTargetWeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTargetWeight(event.target.value);
-    };
-    const handleTargetDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTargetDate(event.target.value);
-    };
-    const handleTargetCaloriesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTargetCalories(event.target.value);
-    };
-
     const validateTargetDate = (date: string): boolean => {
         const today = new Date();
         const target = new Date(date);
@@ -198,10 +185,11 @@ function ProfilePage() {
                             select
                             label = 'Activity Level'
                             value = { activityLevel }
-                            onChange = { handleActivityLevelChange }
+                            onChange = {(e) =>
+                                setActivityLevel(e.target.value)
+                            }
                             fullWidth
                         >
-                            <MenuItem value = 'bmr'>Basal Metabolic Rate (BMR)</MenuItem>
                             <MenuItem value = 'sedentary'>Sedentary (little or no exercise)</MenuItem>
                             <MenuItem value = 'lightly_active'>Lightly active (light exercise/sports 1-3 days/week)</MenuItem>
                             <MenuItem value = 'moderately_active'>Moderately active (moderate exercise/sports 3-5 days/week)</MenuItem>
@@ -212,7 +200,9 @@ function ProfilePage() {
                             label = 'Target Weight (kg)'
                             type = 'number'
                             value = { targetWeight }
-                            onChange = { handleTargetWeightChange }
+                            onChange = {(e) =>
+                                setTargetWeight(e.target.value)
+                            }
                             onBlur = {() => {
                                 if (targetWeight) {
                                     setTargetWeight(Number(targetWeight).toFixed(2));
@@ -224,7 +214,9 @@ function ProfilePage() {
                             label = 'Target Date'
                             type = 'date'
                             value = { targetDate }
-                            onChange = { handleTargetDateChange }
+                            onChange = {(e) =>
+                                setTargetDate(e.target.value)
+                            }
                             slotProps = {{ inputLabel: { shrink: true } }}
                             fullWidth
                         />
@@ -232,7 +224,9 @@ function ProfilePage() {
                             label = 'Target Calories'
                             type = 'number'
                             value = { targetCalories }
-                            onChange = { handleTargetCaloriesChange }
+                            onChange = {(e) =>
+                                setTargetCalories(e.target.value)
+                            }
                             fullWidth
                         />
                         { calculatedCalories !== null &&
@@ -258,7 +252,6 @@ function ProfilePage() {
                             disabled
                         />
                     </Stack>
-
                     {
                         isEditing &&
                         <Button variant = 'contained' sx = {{ mt: 3 }} onClick = { handleSaveChanges } disabled = { isSaving }>

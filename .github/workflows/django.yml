@@ -26,7 +26,8 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,4 +52,4 @@ jobs:
       - name: Trigger Render deploy
         if: success()
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}

@@ -4,8 +4,26 @@ import DateSelector from '../components/DateSelector';
 import ExerciseDashboard from '../components/ExerciseDashboard';
 import FoodDashboard from '../components/FoodDashboard';
 import HealthDashboard from '../components/HealthDashboard';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../store/store';
+import { fetchHealthLogByDate } from '../store/thunks/healthLogThunk';
+import { fetchUserProfile } from '../store/thunks/authThunk';
 
 export default function DashboardPage() {
+
+    const dispatch = useDispatch<AppDispatch>();
+    const activeDate = useSelector((state: RootState) => state.dashboard.activeDate);
+    const activeHealthLog = useSelector((state: RootState) => state.healthLog.activeLog);
+    
+    useEffect(() => {
+        dispatch(fetchHealthLogByDate(activeDate));
+    }, [activeDate, dispatch]);
+
+    useEffect(() => {
+        dispatch(fetchUserProfile());
+    }, [dispatch, activeHealthLog]);
+
     return (
     <>
     <NavBar parent = { 'dashboard' } />

@@ -1,10 +1,10 @@
 export interface ErrorResponse {
     detail: string;
-}
+};
 
 export interface ValidationErrorResponse {
     [field : string]: string[];
-}
+};
 
 export interface AuthState {
     isAuthenticated: boolean;
@@ -17,7 +17,7 @@ export interface AuthState {
 export interface LoginDataType {
     username: string;
     password: string;
-}
+};
 
 export interface RegisterDataType {
     username:        string;
@@ -32,7 +32,7 @@ export interface RegisterDataType {
     target_weight:   number;
     target_date:     string;
     target_calories: number;
-}
+};
 
 export interface ProfileDataType {
     id:              number;
@@ -49,8 +49,30 @@ export interface ProfileDataType {
     target_calories: number;
     bmr:             number;
     tdee:            number;
-}
+};
 
 export interface DashboardState {
     activeDate: string;
-}
+};
+
+export interface HealthLogType {
+    id: number;
+    date: string;
+    bodyweight: number | null;
+    hours_slept: number | null;
+    liquid_consumed: number | null;
+};
+
+export interface HealthLogState {
+    activeLog: HealthLogType | null;
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+};
+
+export interface UpdatePayload {
+    id: number;
+    data: Partial<Pick<HealthLogType,
+        'bodyweight' | 'hours_slept' | 'liquid_consumed'
+    >>;
+};
+
