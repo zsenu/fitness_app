@@ -1,11 +1,12 @@
-import { Typography, Accordion, AccordionSummary, AccordionDetails, Divider } from '@mui/material';
+import { Box, Typography, Accordion, AccordionSummary, AccordionDetails, Divider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import NavBar from '../components/NavBar';
 
 function AboutPage() {
     return (
     <>
-        <NavBar parent = 'about' />
+    <NavBar parent = 'about' />
+    <Box sx = {{ p: 2 }}>
         <Typography variant = 'h4' gutterBottom>
             About Fitness & Health
         </Typography>
@@ -140,6 +141,7 @@ function AboutPage() {
                 </Typography>
             </AccordionDetails>
         </Accordion>
+    </Box>
     </>
     );
 };

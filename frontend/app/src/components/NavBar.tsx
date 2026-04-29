@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
+import { AppBar, Toolbar, Button, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store/store';
@@ -16,12 +16,10 @@ function NavBar({ parent }: { parent: string | null }) {
     }
     
     return(
-    <AppBar position = 'static'>
+    <AppBar position = 'sticky'
+            sx={{ top: 0, left: 0, width: '100%', margin: 0, padding: 0 }}
+    >
         <Toolbar>
-            <Typography sx = {{ flexGrow: 1 }} variant = 'h6'>
-                Fitness App
-            </Typography>
-
             <Stack direction = 'row' spacing = { 1 }>
                 {
                     parent !== 'about' &&

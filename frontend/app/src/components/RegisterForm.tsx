@@ -4,6 +4,9 @@ import { register } from '../store/thunks/authThunk';
 import type { RegisterDataType } from '../interfaces/interfaces';
 import type { AppDispatch } from '../store/store';
 import { useNavigate } from 'react-router-dom';
+import ageCalculator from '../helpers/ageCalculator';
+import targetCalorieCalculator from '../helpers/targetCalorieCalculator';
+import calorieBoundaryCalculator from '../helpers/calorieBoundaryCalculator';
 import { Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
 
 const MIN_AGE = 18;
@@ -34,20 +37,14 @@ function RegisterForm() {
         targetWeight: '',
         targetDate: '',
         targetCalories: '',
+        other: ''
     });
 
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
 
     const validateBirthDate = (date: string): boolean => {
-
-        const today = new Date();
-        const birth = new Date(date);
-        let age = today.getFullYear() - birth.getFullYear();
-        const monthDiff = today.getMonth() - birth.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-            age -= 1;
-        }
+        const age = ageCalculator(date);
         return (MIN_AGE <= age && age <= MAX_AGE);
     }
 
@@ -57,6 +54,16 @@ function RegisterForm() {
         const farFuture = new Date();
         farFuture.setFullYear(farFuture.getFullYear() + 100);
         return (today < target && target < farFuture);
+    }
+
+    const validateHeight = (value: string): boolean => {
+        const height = parseFloat(value);
+        return (height >= 140 && height <= 240);
+    }
+
+    const validateWeight = (value: string): boolean => {
+        const weight = parseFloat(value);
+        return (weight >= 40 && weight <= 140);
     }
 
     const handleFormSubmission = async (e: React.SubmitEvent) => {
@@ -73,6 +80,7 @@ function RegisterForm() {
             targetWeight: '',
             targetDate: '',
             targetCalories: '',
+            other: ''
         }
 
         if (password.length < 8) {
@@ -133,13 +141,57 @@ function RegisterForm() {
             }
             catch (error: unknown) {
                 if (error instanceof Error) {
-                    alert(`Login failed: ${ error.message }`);
+                    newErrors.other = `Registration failed: ${ error.message }`;
                 }
             }
         }
 
         setErrors(newErrors);
     }
+
+    const calculatedCalories =
+        gender &&
+        birthDate &&
+        height &&
+        startingWeight &&
+        activityLevel &&
+        targetWeight &&
+        targetDate &&
+        validateTargetDate(targetDate) &&
+        validateBirthDate(birthDate) &&
+        validateHeight(height) &&
+        validateWeight(startingWeight) &&
+        validateWeight(targetWeight)
+            ? targetCalorieCalculator(
+                gender,
+                birthDate,
+                parseFloat(startingWeight),
+                parseFloat(height),
+                activityLevel,
+                parseFloat(targetWeight),
+                targetDate
+            )
+            : null;
+
+    const { minCalories, maxCalories } = 
+        gender &&
+        birthDate &&
+        height &&
+        startingWeight &&
+        activityLevel &&
+        validateTargetDate(targetDate) &&
+        validateBirthDate(birthDate) &&
+        validateHeight(height) &&
+        validateWeight(startingWeight) &&
+        validateWeight(targetWeight)
+            ? calorieBoundaryCalculator(
+                gender,
+                birthDate,
+                parseFloat(startingWeight),
+                parseFloat(height),
+                activityLevel
+            )
+            : { minCalories: null, maxCalories: null };
 
     return (
         <form onSubmit = { handleFormSubmission }>
@@ -149,7 +201,7 @@ function RegisterForm() {
             <TextField
                 label = 'Username'
                 value = { username }
-                onChange = { (e) => setUsername(e.target.value) }
+                onChange = { (e) => { setUsername(e.target.value); } }
                 fullWidth
                 required
                 autoComplete = 'new-username'
@@ -160,7 +212,7 @@ function RegisterForm() {
                 label = 'Email'
                 type = 'email'
                 value = { email }
-                onChange = { (e) => setEmail(e.target.value) }
+                onChange = { (e) => { setEmail(e.target.value); } }
                 fullWidth
                 required
                 error = { !!errors.email }
@@ -170,7 +222,7 @@ function RegisterForm() {
                 label = 'Password'
                 type = 'password'
                 value = { password }
-                onChange = { (e) => setPassword(e.target.value) }
+                onChange = { (e) => { setPassword(e.target.value); } }
                 fullWidth
                 required
                 autoComplete = 'new-password'
@@ -181,7 +233,7 @@ function RegisterForm() {
                 label = 'Repeat Password'
                 type = 'password'
                 value = { repeatPassword }
-                onChange = { (e) => setRepeatPassword(e.target.value) }
+                onChange = { (e) => { setRepeatPassword(e.target.value); } }
                 fullWidth
                 required
                 autoComplete = 'new-password'
@@ -193,7 +245,7 @@ function RegisterForm() {
                 select
                 label = 'Gender'
                 value = { gender }
-                onChange = { (e) => setGender(e.target.value) }
+                onChange = { (e) => { setGender(e.target.value); } }
                 fullWidth
                 required
             >
@@ -205,7 +257,7 @@ function RegisterForm() {
                 label = 'Birth Date'
                 type = 'date'
                 value = { birthDate }
-                onChange = { (e) => setBirthDate(e.target.value) }
+                onChange = { (e) => { setBirthDate(e.target.value); } }
                 slotProps = {{ inputLabel: { shrink: true } }}
                 fullWidth
                 required
@@ -217,7 +269,7 @@ function RegisterForm() {
                 label = 'Height (cm)'
                 type = 'number'
                 value = { height }
-                onChange = { (e) => setHeight(e.target.value) }
+                onChange = { (e) => { setHeight(e.target.value); } }
                 slotProps = {{ htmlInput: { min: 140, max: 240, step: 0.1 } }}
                 fullWidth
                 required
@@ -229,7 +281,7 @@ function RegisterForm() {
                 label = 'Starting Weight (kg)'
                 type = 'number'
                 value = { startingWeight }
-                onChange = { (e) => setStartingWeight(e.target.value) }
+                onChange = { (e) => { setStartingWeight(e.target.value); } }
                 slotProps = {{ htmlInput: { min: 40, max: 140, step: 0.1 } }}
                 fullWidth
                 required
@@ -241,11 +293,10 @@ function RegisterForm() {
                 select
                 label = 'Activity Level'
                 value = { activityLevel }
-                onChange = { (e) => setActivityLevel(e.target.value) }
+                onChange = { (e) => { setActivityLevel(e.target.value); } }
                 fullWidth
                 required
             >
-                <MenuItem value = 'bmr'>Basal Metabolic Rate (BMR)</MenuItem>
                 <MenuItem value = 'sedentary'>Sedentary (little or no exercise)</MenuItem>
                 <MenuItem value = 'lightly_active'>Lightly active (light exercise/sports 1-3 days/week)</MenuItem>
                 <MenuItem value = 'moderately_active'>Moderately active (moderate exercise/sports 3-5 days/week)</MenuItem>
@@ -257,7 +308,7 @@ function RegisterForm() {
                 label = 'Target Weight (kg)'
                 type = 'number'
                 value = { targetWeight }
-                onChange = { (e) => setTargetWeight(e.target.value) }
+                onChange = { (e) => { setTargetWeight(e.target.value); } }
                 slotProps = {{ htmlInput: { min: 40, max: 140, step: 0.1 } }}
                 fullWidth
                 required
@@ -269,7 +320,7 @@ function RegisterForm() {
                 label = 'Target Date'
                 type = 'date'
                 value = { targetDate }
-                onChange = { (e) => setTargetDate(e.target.value) }
+                onChange = { (e) => { setTargetDate(e.target.value); } }
                 slotProps = {{ inputLabel: { shrink: true } }}
                 fullWidth
                 required
@@ -281,13 +332,22 @@ function RegisterForm() {
                 label = 'Target Calories'
                 type = 'number'
                 value = { targetCalories }
-                onChange = { (e) => setTargetCalories(e.target.value) }
+                onChange = { (e) => { setTargetCalories(e.target.value); } }
                 slotProps = {{ htmlInput: { min: 100, max: 10000, step: 0.1 } }}
                 fullWidth
                 required
                 error = { !!errors.targetCalories }
                 helperText = { errors.targetCalories }
             />
+
+            { calculatedCalories !== null &&
+                <Typography>
+                    Based on your inputs, your target daily calorie intake to reach your goal is approximately { calculatedCalories } calories.
+                    { minCalories !== null && calculatedCalories < minCalories && ` This is below the recommended minimum of ${ minCalories } calories.` }
+                    { maxCalories !== null && calculatedCalories > maxCalories && ` This is above the recommended maximum of ${ maxCalories } calories.` }
+                </Typography>
+            }
+            { !!errors.other && <Typography color = 'error'>{ errors.other }</Typography> }
 
             <Button variant = 'contained' fullWidth type = 'submit'>
                 Register

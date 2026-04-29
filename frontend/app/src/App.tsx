@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import AboutPage from './pages/AboutPage.tsx';
+import LoadingOverlay from './components/LoadingOverlay.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import UnauthenticatedRoute from './components/UnauthenticatedRoute.tsx';
 
@@ -19,14 +20,15 @@ function App() {
 
     return (
         <>
-            <BrowserRouter>
-                <Routes>
-                    <Route path = '/'          element = { <UnauthenticatedRoute><LandingPage /></UnauthenticatedRoute> } />
-                    <Route path = '/dashboard' element = { <ProtectedRoute><DashboardPage /></ProtectedRoute> } />
-                    <Route path = '/profile'   element = { <ProtectedRoute><ProfilePage /></ProtectedRoute> } />
-                    <Route path = '/about'     element = { <AboutPage /> } />
-                </Routes>
-            </BrowserRouter>
+        <LoadingOverlay />
+        <BrowserRouter>
+            <Routes>
+                <Route path = '/'          element = { <UnauthenticatedRoute><LandingPage /></UnauthenticatedRoute> } />
+                <Route path = '/dashboard' element = { <ProtectedRoute><DashboardPage /></ProtectedRoute> } />
+                <Route path = '/profile'   element = { <ProtectedRoute><ProfilePage /></ProtectedRoute> } />
+                <Route path = '/about'     element = { <AboutPage /> } />
+            </Routes>
+        </BrowserRouter>
         </>
     );
 };

@@ -25,7 +25,6 @@ GENDER_CHOICES = [
     ('F', 'Female')
 ]
 ACTIVITY_LEVEL_CHOICES = [
-    ('bmr',               'Basal metabolic rate (BMR)'),
     ('sedentary',         'Sedentary (little or no exercise)'),
     ('lightly_active',    'Lightly active (light exercise/sports 1-3 days/week)'),
     ('moderately_active', 'Moderately active (moderate exercise/sports 3-5 days/week)'),
@@ -45,7 +44,7 @@ class CustomUser(AbstractUser):
     birth_date      =     models.DateField()
     height          =  models.IntegerField(                                     validators = [MinValueValidator(MIN_HEIGHT),          MaxValueValidator(MAX_HEIGHT)])
     starting_weight =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
-    activity_level  =     models.CharField(max_length = 31, choices = ACTIVITY_LEVEL_CHOICES, default = 'bmr')
+    activity_level  =     models.CharField(max_length = 31, choices = ACTIVITY_LEVEL_CHOICES, default = 'sedentary')
     target_weight   =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_WEIGHT),          MaxValueValidator(MAX_WEIGHT)])
     target_date     =     models.DateField()
     target_calories =  models.DecimalField(max_digits = 8,  decimal_places = 2, validators = [MinValueValidator(MIN_TARGET_CALORIES), MaxValueValidator(MAX_TARGET_CALORIES)], default = DEFAULT_TARGET_CALORIES)
@@ -60,11 +59,8 @@ class CustomUser(AbstractUser):
         
     @property
     def tdee(self):
-        if self.activity_level == 'bmr':
-            return self.bmr
-        else:
-            multiplier = ACTIVITY_MULTIPLIERS.get(self.activity_level, 1)
-            return self.bmr * multiplier
+        multiplier = ACTIVITY_MULTIPLIERS.get(self.activity_level, 1.2)
+        return self.bmr * multiplier
 
     def _calculate_age(self):
         today = timezone.localdate()
@@ -133,7 +129,9 @@ class BaseLogMixin(models.Model):
 
         if self.date is not None:
             if self.date > timezone.localdate() + timedelta(days = 1):
-                raise ValidationError({ 'date': 'Date cannot be in the future.' })
+                raise ValidationError({ 'date': 'Date cannot be more than 1 day in the future.' })
+            if self.date < timezone.localdate() - timedelta(days = 90):
+                raise ValidationError({ 'date': 'Date cannot be more than 90 days in the past.' })
             if self.pk:
                 original = self.__class__.objects.get(pk = self.pk)
                 if original.date != self.date:

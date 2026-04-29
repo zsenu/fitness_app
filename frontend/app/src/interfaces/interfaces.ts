@@ -50,3 +50,7 @@ export interface ProfileDataType {
     bmr:             number;
     tdee:            number;
 }
+
+export interface DashboardState {
+    activeDate: string;
+}

@@ -5,6 +5,8 @@ import { fetchUserProfile } from '../store/thunks/authThunk';
 import type { RootState, AppDispatch } from '../store/store';
 import type { ProfileDataType } from '../interfaces/interfaces';
 import NavBar from '../components/NavBar';
+import targetCalorieCalculator from '../helpers/targetCalorieCalculator';
+import calorieBoundaryCalculator from '../helpers/calorieBoundaryCalculator';
 
 function ProfilePage() {
 
@@ -25,6 +27,11 @@ function ProfilePage() {
         Number(targetCalories) !== Number(user?.target_calories)
     );
 
+    const gender: string | null = user?.gender || null;
+    const birthDate: string | null = user?.birth_date || null;
+    const height: string | null = user?.height.toString() || null;
+    const currentWeight: string | null = user?.current_weight.toString() || null;
+
     const handleActivityLevelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setActivityLevel(event.target.value);
     };
@@ -37,6 +44,58 @@ function ProfilePage() {
     const handleTargetCaloriesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTargetCalories(event.target.value);
     };
+
+    const validateTargetDate = (date: string): boolean => {
+        const today = new Date();
+        const target = new Date(date);
+        const farFuture = new Date();
+        farFuture.setFullYear(farFuture.getFullYear() + 100);
+        return (today < target && target < farFuture);
+    }
+
+    const validateWeight = (value: string): boolean => {
+        const weight = parseFloat(value);
+        return (weight >= 40 && weight <= 140);
+    }
+
+    const calculatedCalories =
+        gender &&
+        birthDate &&
+        height &&
+        currentWeight &&
+        activityLevel &&
+        targetWeight &&
+        targetDate &&
+        validateTargetDate(targetDate) &&
+        validateWeight(targetWeight)
+            ? targetCalorieCalculator(
+                gender,
+                birthDate,
+                parseFloat(currentWeight),
+                parseFloat(height),
+                activityLevel,
+                parseFloat(targetWeight),
+                targetDate
+            )
+            : null;
+
+    const { minCalories, maxCalories } = 
+        gender &&
+        birthDate &&
+        height &&
+        currentWeight &&
+        activityLevel &&
+        validateTargetDate(targetDate) &&
+        validateWeight(targetWeight)
+            ? calorieBoundaryCalculator(
+                gender,
+                birthDate,
+                parseFloat(currentWeight),
+                parseFloat(height),
+                activityLevel
+            )
+            : { minCalories: null, maxCalories: null };
+
     const handleSaveChanges = async () => {
         if (!token) {
             alert('Authorization error. Try logging in again.');
@@ -176,6 +235,13 @@ function ProfilePage() {
                             onChange = { handleTargetCaloriesChange }
                             fullWidth
                         />
+                        { calculatedCalories !== null &&
+                            <Typography>
+                                Based on your inputs, your target daily calorie intake to reach your goal is approximately { calculatedCalories } calories.
+                                { minCalories !== null && calculatedCalories < minCalories && ` This is below the recommended minimum of ${ minCalories } calories.` }
+                                { maxCalories !== null && calculatedCalories > maxCalories && ` This is above the recommended maximum of ${ maxCalories } calories.` }
+                            </Typography>
+                        }
 
                         <TextField
                             label = 'BMR (kcal/day)'

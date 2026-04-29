@@ -10,6 +10,7 @@ function LoginForm() {
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
@@ -23,12 +24,12 @@ function LoginForm() {
                 navigate('/dashboard');
             }
             else if (login.rejected.match(resultAction)) {
-                alert(resultAction.payload?.detail || 'Login failed.');
+                setLoginError(resultAction.payload?.detail || 'Login failed.');
             }
         }
         catch (error: unknown) {
             if (error instanceof Error) {
-                alert(`Login failed: ${ error.message }`);
+                setLoginError(`Login failed: ${ error.message }`);
             }
         }
     }
@@ -41,7 +42,7 @@ function LoginForm() {
             <TextField
                 label = 'Username'
                 value = { username }
-                onChange = { (e) => setUsername(e.target.value) }
+                onChange = { (e) => { setUsername(e.target.value); } }
                 fullWidth
                 required
                 autoComplete = 'username'
@@ -50,11 +51,12 @@ function LoginForm() {
                 label = 'Password'
                 type = 'password'
                 value = { password }
-                onChange = { (e) => setPassword(e.target.value) }
+                onChange = { (e) => { setPassword(e.target.value); } }
                 fullWidth
                 required
                 autoComplete = 'password'
             />
+            { !!loginError && <Typography color = 'error'>{ loginError }</Typography> }
 
             <Button variant = 'contained' fullWidth type = 'submit'>
                 Login

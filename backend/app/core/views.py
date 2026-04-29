@@ -29,7 +29,7 @@ class InjectParentLogIntoContextMixin:
 
     def get_parent_log(self):
         if self.log_model is None:
-            raise NotImplementedError("log_model must be defined")
+            raise NotImplementedError('log_model must be defined')
         if not hasattr(self, '_parent_log'):
             log_id = self.kwargs['log_id']
             self._parent_log = get_object_or_404(self.log_model, id = log_id, user = self.request.user)
@@ -45,7 +45,7 @@ View for health endpoint
 """
 class HealthCheckView(APIView):
     def get(self, request):
-        return Response({"status": "ok"}, status = status.HTTP_200_OK)
+        return Response({ 'status': 'ok' }, status = status.HTTP_200_OK)
 
 """
 User-related views
