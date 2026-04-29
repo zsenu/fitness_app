@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { FoodItemState } from '../../interfaces/interfaces.ts';
-import { fetchAllFoodItems, createFoodItem } from '../thunks/foodItemThunk.tsx';
+import { fetchAllFoodItems, createFoodItem } from '../thunks/foodItemThunk.ts';
 
 const initialState: FoodItemState = {
     foodItems: [],
