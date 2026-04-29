@@ -1,4 +1,4 @@
-import { Box, Typography, Accordion, AccordionSummary, AccordionDetails, Divider } from '@mui/material';
+import { Typography, Accordion, AccordionSummary, AccordionDetails, Divider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import NavBar from '../components/NavBar';
 
