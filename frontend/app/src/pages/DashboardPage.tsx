@@ -9,15 +9,22 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store/store';
 import { fetchHealthLogByDate } from '../store/thunks/healthLogThunk';
 import { fetchUserProfile } from '../store/thunks/authThunk';
+import { fetchFoodLogByDate } from '../store/thunks/foodLogThunk';
 
 export default function DashboardPage() {
 
     const dispatch = useDispatch<AppDispatch>();
     const activeDate = useSelector((state: RootState) => state.dashboard.activeDate);
     const activeHealthLog = useSelector((state: RootState) => state.healthLog.activeLog);
+    const activeFoodLog = useSelector((state: RootState) => state.foodLog.activeLog);
     
     useEffect(() => {
+        console.log('Active Food Log:', activeFoodLog);
+    }, [activeFoodLog, activeDate]);
+
+    useEffect(() => {
         dispatch(fetchHealthLogByDate(activeDate));
+        dispatch(fetchFoodLogByDate(activeDate));
     }, [activeDate, dispatch]);
 
     useEffect(() => {

@@ -6,10 +6,21 @@ function ExerciseDashboard() {
             sx = {{
                 padding: 2,
                 height: 300,
-                backgroundColor: '#668098',
-                borderRadius: 2,
+                backgroundColor: '#94b6d6',
+                borderRadius: 2
             }}
         >
+                    <Box
+            sx = {{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                fontWeight: 'bold'
+            }}
+        >
+            Exercise Log
+        </Box>
         </Box>
     );
 }

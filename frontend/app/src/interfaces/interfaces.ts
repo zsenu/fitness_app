@@ -69,10 +69,62 @@ export interface HealthLogState {
     error: ValidationErrorResponse | null;
 };
 
-export interface UpdatePayload {
+export interface HealthLogUpdatePayload {
     id: number;
     data: Partial<Pick<HealthLogType,
         'bodyweight' | 'hours_slept' | 'liquid_consumed'
     >>;
 };
 
+export interface FoodItemType {
+    id: number;
+    name: string;
+    description: string;
+    calories: string;
+    fat: string;
+    carbohydrates: string;
+    protein: string;
+};
+
+export interface FoodEntryType {
+    id: number;
+    parent_log: number;
+    meal_type: 'breakfast' | 'lunch' | 'dinner' | 'misc';
+    food_item: FoodItemType;
+    quantity: string;
+    description: string;
+};
+
+export interface FoodEntryPayloadType {
+    meal_type: 'breakfast' | 'lunch' | 'dinner' | 'misc';
+    food_item_id: number;
+    quantity: string;
+    description: string;
+}
+
+export interface MacrosType {
+    calories: number;
+    fat: number;
+    carbohydrates: number;
+    protein: number;
+};
+
+export interface FoodLogType {
+    id: number;
+    date: string;
+    entries: FoodEntryType[];
+
+    breakfast_macros: MacrosType;
+    lunch_macros: MacrosType;
+    dinner_macros: MacrosType;
+    misc_macros: MacrosType;
+    total_macros: MacrosType;
+};
+
+export interface FoodLogState {
+    activeLog: FoodLogType | null;
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+};
+
+export type MealType = FoodEntryType['meal_type'];

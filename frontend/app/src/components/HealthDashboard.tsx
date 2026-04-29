@@ -31,10 +31,6 @@ function HealthDashboard() {
         )
     );
 
-    useEffect (() => {
-        console.log(errors);
-    }, [errors]);
-
     useEffect(() => {
         if (healthLog) {
             setBodyweight(healthLog.bodyweight ? Number(healthLog.bodyweight).toFixed(2) : null);
