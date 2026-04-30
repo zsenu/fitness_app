@@ -114,7 +114,7 @@ function AboutPage() {
                     Strength training
                 </Typography>
                 <Typography>
-                    Strength exercises involve some sort of resistence that your muscles have to work against.
+                    Strength exercises involve some sort of resistance that your muscles have to work against.
                     The resistance can be a foreign object or even your own bodyweight.
                     Strength training can result in an increased muscle mass and greater strength.
                 </Typography>
@@ -123,7 +123,7 @@ function AboutPage() {
                     How to build muscles?
                 </Typography>
                 <Typography>
-                    The process of muscle growth is called <strong>hypertrophy</strong>. When your muscles are challanged, micro-tears appear on them.
+                    The process of muscle growth is called <strong>hypertrophy</strong>. When your muscles are challenged, micro-tears appear on them.
                     If proper muscle stimulation and <strong>excess nutrients</strong> (calories and protein) are provided, your body doesn't just regenerate them,
                     it increases their volume.
                     <br />
@@ -156,9 +156,9 @@ function AboutPage() {
                     Sleep
                 </Typography>
                 <Typography>
-                    Many importent processes within your body happen during sleep. The recommended amount of sleep for an adult is around 7-8 hours.
+                    Many important processes within your body happen during sleep. The recommended amount of sleep for an adult is around 7-8 hours.
                     <br />
-                    Try to have a consistend bedtime and wake-up time. A healthy sleep schedule can lead to better energy levels, better focus and mood.
+                    Try to have a consistent bedtime and wake-up time. A healthy sleep schedule can lead to better energy levels, better focus and mood.
                 </Typography>
 
                 <Typography variant = 'subtitle1' sx = {{ fontWeight: 600, marginBottom: 2, marginTop: 1 }}>
