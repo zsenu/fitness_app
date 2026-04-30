@@ -11,7 +11,7 @@ export interface AuthState {
     userProfile:     ProfileDataType | null;
     accessToken:     string | null;
     loading:         boolean;
-    error:           ValidationErrorResponse | null;
+    error:           ValidationErrorResponse | string | null;
 };
 
 export interface LoginDataType {

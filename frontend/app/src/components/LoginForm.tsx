@@ -19,12 +19,12 @@ function LoginForm() {
         e.preventDefault();
         const loginData: LoginDataType = { username, password };
         try {
-            const resultAction = await dispatch(login(loginData));
-            if (login.fulfilled.match(resultAction)) {
+            const result = await dispatch(login(loginData));
+            if (login.fulfilled.match(result)) {
                 navigate('/dashboard');
             }
-            else if (login.rejected.match(resultAction)) {
-                setLoginError(resultAction.payload?.detail || 'Login failed.');
+            else if (login.rejected.match(result)) {
+                setLoginError(result.payload || 'Login failed.');
             }
         }
         catch (error: unknown) {

@@ -34,7 +34,7 @@ export const fetchUserProfile = createAsyncThunk<
 export const login = createAsyncThunk<
     { access: string; profile: ProfileDataType }, 
     LoginDataType,
-    { rejectValue: ValidationErrorResponse }
+    { rejectValue: string }
 >(
     'auth/login',
     async (
@@ -51,7 +51,7 @@ export const login = createAsyncThunk<
         });
 
         if (!loginResponse.ok) {
-            const errorData: ValidationErrorResponse = await loginResponse.json();
+            const errorData = await loginResponse.json();
             return thunkAPI.rejectWithValue(errorData);
         }
 
@@ -67,7 +67,7 @@ export const login = createAsyncThunk<
         });
 
         if (!profileResponse.ok) {
-            const errorData: ValidationErrorResponse = await profileResponse.json();
+            const errorData = await profileResponse.json();
             return thunkAPI.rejectWithValue(errorData);
         }
         const profileData = await profileResponse.json();
