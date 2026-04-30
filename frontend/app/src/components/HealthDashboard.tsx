@@ -71,7 +71,7 @@ function HealthDashboard() {
         <Box
             sx = {{
                 padding: 2,
-                height: 300,
+                height: 400,
                 background: '#ceb5ce',
                 borderRadius: 2
             }}

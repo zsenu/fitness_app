@@ -11,7 +11,7 @@ type AddItemModalProps = {
     onClose: () => void;
 };
 
-function AddFoodEntryModal({ open, onClose }: AddItemModalProps) {
+function AddFoodItemModal({ open, onClose }: AddItemModalProps) {
     const foodItems = useSelector((state: RootState) => state.foodItem.foodItems);
     const dispatch = useDispatch<AppDispatch>();
 
@@ -91,7 +91,7 @@ function AddFoodEntryModal({ open, onClose }: AddItemModalProps) {
 
 
     const handleSubmit = () => {
-        if (name === '' || Number(calories) === 0 || wrongTotalNutrients) { return; }
+        if (!valid) { return; }
 
         dispatch(
             createFoodItem({
@@ -172,11 +172,11 @@ function AddFoodEntryModal({ open, onClose }: AddItemModalProps) {
                     onClick = { handleSubmit }
                     disabled = { !valid }
                 >
-                    Add Entry
+                    Add Item
                 </Button>
             </DialogActions>
         </Dialog>
     );
 }
 
-export default AddFoodEntryModal;
+export default AddFoodItemModal;

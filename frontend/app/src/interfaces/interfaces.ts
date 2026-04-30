@@ -134,3 +134,95 @@ export interface FoodLogState {
 };
 
 export type MealType = FoodEntryType['meal_type'];
+
+export interface MuscleGroupType {
+    id: number;
+    name: string;
+};
+
+export interface StrengthExerciseType {
+    id: number;
+    name: string;
+    description: string;
+    target_muscle_groups: MuscleGroupType[];
+};
+
+export interface StrengthExercisePayloadType {
+    name: string;
+    description: string;
+    target_muscle_group_ids: number[];
+};
+
+export interface StrengthExerciseState {
+    muscleGroups: MuscleGroupType[];
+    exercises: StrengthExerciseType[];
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+};
+
+export interface StrengthSetType {
+    id: number;
+    parent_log: number;
+    exercise: StrengthExerciseType;
+    weight: string;
+    reps: number;
+    description: string;
+};
+
+export interface StrengthSetPayloadType {
+    exercise_id: number;
+    weight: string;
+    reps: number;
+    description: string;
+};
+
+export interface StrengthLogType {
+    id: number;
+    date: string;
+    sets: StrengthSetType[];
+};
+
+export interface StrengthLogState {
+    activeLog: StrengthLogType | null;
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+};
+
+export interface CardioExerciseType {
+    id: number;
+    name: string;
+    description: string;
+    calories_per_minute: number;
+};
+
+export interface CardioExerciseState {
+    exercises: CardioExerciseType[];
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+};
+
+export interface CardioSetType {
+    id: number;
+    parent_log: number;
+    exercise: CardioExerciseType;
+    duration: string;
+    description: string;
+}
+
+export interface CardioSetPayloadType {
+    exercise_id: number;
+    duration: string;
+    description: string;
+}
+
+export interface CardioLogType {
+    id: number;
+    date: string;
+    sets: CardioSetType[];
+}
+
+export interface CardioLogState {
+    activeLog: CardioLogType | null;
+    loading: boolean;
+    error: ValidationErrorResponse | null;
+}

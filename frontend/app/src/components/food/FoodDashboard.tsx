@@ -17,11 +17,17 @@ function FoodDashboard() {
 
     const [open, setOpen] = useState(false);
 
+    const userProfile = useSelector((state: RootState) => state.auth.userProfile);
+    const targetCalories = userProfile ? userProfile.target_calories : 0;
+
+    const calorieDifference = targetCalories - foodLog!.total_macros.calories;
+    const isUnderTarget = calorieDifference >= 0;
+
     return (
         <Box
             sx={{
                 p: 2,
-                minHeight: 300,
+                minHeight: 400,
                 backgroundColor: '#caaa8d',
                 borderRadius: 2,
                 display: 'flex',
@@ -95,6 +101,16 @@ function FoodDashboard() {
                     <Box>
                         <Typography variant = 'h6'>Total</Typography>
                         <MacrosDisplay macros = { foodLog.total_macros } />
+                        <Box
+                            sx = {{
+                                color: isUnderTarget ? 'green' : 'red',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            { isUnderTarget
+                                ? `You have ${ calorieDifference.toFixed(2) } calories left to eat today.`
+                                : `You overate by ${ Math.abs(calorieDifference).toFixed(2) } calories today.` }
+                        </Box>
                     </Box>
                 </>
             )}

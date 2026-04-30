@@ -1,7 +1,7 @@
 import { Container, Grid } from '@mui/material';
 import NavBar from '../components/NavBar';
 import DateSelector from '../components/DateSelector';
-import ExerciseDashboard from '../components/ExerciseDashboard';
+import ExerciseDashboard from '../components/exercise/ExerciseDashboard';
 import FoodDashboard from '../components/food/FoodDashboard';
 import HealthDashboard from '../components/HealthDashboard';
 import { useEffect } from 'react';
@@ -11,6 +11,10 @@ import { fetchHealthLogByDate } from '../store/thunks/healthLogThunk';
 import { fetchUserProfile } from '../store/thunks/authThunk';
 import { fetchFoodLogByDate } from '../store/thunks/foodLogThunk';
 import { fetchAllFoodItems } from '../store/thunks/foodItemThunk';
+import { fetchAllMuscleGroups, fetchAllStrengthExercises } from '../store/thunks/strengthExerciseThunk';
+import { fetchAllCardioExercises } from '../store/thunks/cardioExerciseThunk';
+import { fetchStrengthTrainingByDate } from '../store/thunks/strengthTrainingThunk';
+import { fetchCardioTrainingByDate } from '../store/thunks/cardioTrainingThunk';
 
 export default function DashboardPage() {
 
@@ -20,11 +24,16 @@ export default function DashboardPage() {
 
     useEffect(() => {
         dispatch(fetchAllFoodItems());
+        dispatch(fetchAllMuscleGroups());
+        dispatch(fetchAllStrengthExercises());
+        dispatch(fetchAllCardioExercises());
     }, [dispatch]);
 
     useEffect(() => {
         dispatch(fetchHealthLogByDate(activeDate));
         dispatch(fetchFoodLogByDate(activeDate));
+        dispatch(fetchStrengthTrainingByDate(activeDate));
+        dispatch(fetchCardioTrainingByDate(activeDate));
     }, [activeDate, dispatch]);
 
     useEffect(() => {

@@ -1,17 +1,17 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
-import type { FoodItemType, ValidationErrorResponse } from '../../interfaces/interfaces';
+import type { CardioExerciseType, ValidationErrorResponse } from '../../interfaces/interfaces';
 
-export const fetchAllFoodItems = createAsyncThunk<
-    FoodItemType[],
+export const fetchAllCardioExercises = createAsyncThunk<
+    CardioExerciseType[],
     void,
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
-    'foodItem/fetchAll',
+    'cardioExercise/fetchAllCardioExercises',
     async (_, { getState, rejectWithValue }) => {
         const token = getState().auth.accessToken;
 
-        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/food-items/`, {
+        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/cardio-exercises/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -29,16 +29,16 @@ export const fetchAllFoodItems = createAsyncThunk<
     }
 );
 
-export const createFoodItem = createAsyncThunk<
-    FoodItemType[],
-    Omit<FoodItemType, 'id'>,
+export const createCardioExercise = createAsyncThunk<
+    CardioExerciseType[],
+    Omit<CardioExerciseType, 'id'>,
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
-    'foodItem/create',
+    'cardioExercise/create',
     async (data, { getState, rejectWithValue }) => {
         const token = getState().auth.accessToken;
 
-        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/food-items/`, {
+        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/cardio-exercises/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ export const createFoodItem = createAsyncThunk<
             return rejectWithValue(await response.json());
         }
 
-        const refetchResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/food-items/`, {
+        const refetchResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/cardio-exercises/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

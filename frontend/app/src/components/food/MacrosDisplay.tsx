@@ -6,6 +6,7 @@ type MacrosDisplayProps = {
 };
 
 function MacrosDisplay({ macros }: MacrosDisplayProps) {
+
     return (
         <Box
             sx = {{
@@ -19,6 +20,7 @@ function MacrosDisplay({ macros }: MacrosDisplayProps) {
             <Box>Fat: { macros.fat.toFixed(2) }</Box>
             <Box>Carbs: { macros.carbohydrates.toFixed(2) }</Box>
             <Box>Protein: { macros.protein.toFixed(2) }</Box>
+
         </Box>
     );
 }
