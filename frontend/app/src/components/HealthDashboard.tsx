@@ -132,6 +132,7 @@ function HealthDashboard() {
                 />
                 <TextField
                     label = 'Hours Slept'
+                    type = 'number'
                     value = { hoursSlept ?? '' }
                     onChange = {(e) =>
                         setHoursSlept(e.target.value)
@@ -148,6 +149,7 @@ function HealthDashboard() {
                 />
                 <TextField
                     label = 'Liquid Consumed (L)'
+                    type = 'number'
                     value = { liquidConsumed ?? '' }
                     onChange = {(e) =>
                         setLiquidConsumed(e.target.value)
