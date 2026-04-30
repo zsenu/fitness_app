@@ -53,13 +53,10 @@ function StatisticsContainer() {
     const [foodLogText, setFoodLogText] = useState<string>('');
     const [healthLogText, setHealthLogText] = useState<string>('');
 
-    const elapsedWeeks = statistics ? statistics.elapsed_days / 7 : 0;
-    const weeklyWeightChange = statistics ? statistics.weight_difference / elapsedWeeks : 0;
-
     useEffect(() => {
         if (statistics) {
             setElapsedDaysText(`Elapsed days since joining: ${ statistics.elapsed_days }`);
-            setWeightChangeText(`Weight change: ${ statistics.weight_difference > 0 ? 'gained ' : 'lost ' }${ Math.abs(statistics.weight_difference) } kg (${ weeklyWeightChange > 0 ? 'gained ' : 'lost ' }${ Math.abs(weeklyWeightChange).toFixed(2) } kg/week)`);
+            setWeightChangeText(`Weight change: ${ statistics.weight_difference > 0 ? 'gained ' : 'lost ' }${ Math.abs(statistics.weight_difference) } kg`);
             setStrengthTrainingText(`Strength training sessions recorded: ${ statistics.strength_training_count }`);
             setCardioTrainingText(`Cardio training sessions recorded: ${ statistics.cardio_training_count }`);
             setFoodLogText(`Food logs recorded: ${ statistics.food_log_count }`);
