@@ -56,6 +56,7 @@ export const updateHealthLog = createAsyncThunk<
         });
 
         if (response.status === 404) return null;
+        if (response.status === 410) return null;
 
         if (!response.ok) {
             const errorData = await response.json();

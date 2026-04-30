@@ -33,6 +33,14 @@ function AddCardioSetModal({ entry, open, onClose }: ModifyEntryModalProps) {
         }
     };
 
+    const handleModalClose = () => {
+        setSelectedExercise(entry.exercise || null);
+        setDuration(entry.duration.toString() || '');
+        setDescription(entry.description || '');
+        setDurationError(null);
+        onClose();
+    }
+
     const handleSubmit = () => {
         if (!valid) { return; }
 
@@ -55,7 +63,7 @@ function AddCardioSetModal({ entry, open, onClose }: ModifyEntryModalProps) {
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleModalClose } fullWidth maxWidth = 'sm'>
             <DialogTitle>Modify Cardio Set</DialogTitle>
 
             <DialogContent>
@@ -91,7 +99,7 @@ function AddCardioSetModal({ entry, open, onClose }: ModifyEntryModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleModalClose }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }

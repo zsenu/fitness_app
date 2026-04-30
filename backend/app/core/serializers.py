@@ -197,6 +197,13 @@ class FoodEntrySerializer(FullValidationMixin):
         ]
         context_fields = ['parent_log']
 
+    def create(self, validated_data):
+        print('hello')
+        try:
+            return super().create(validated_data)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({ 'non_field_errors': ['An entry for this meal type already exists in the log.'] })
+
 class FoodLogSerializer(RelatedToUserMixin, FullValidationMixin):
     entries          = FoodEntrySerializer(many = True, read_only = True)
     breakfast_macros = serializers.SerializerMethodField()

@@ -45,7 +45,6 @@ function HealthDashboard() {
     }, [activeDate, healthLog]);
 
     const handleSave = () => {
-    
         if (healthLog) {
             const requestBody = {
                 bodyweight: bodyweight ? parseFloat(bodyweight) : null,

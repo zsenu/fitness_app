@@ -36,6 +36,15 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
         }
     };
 
+    const handleModalClose = () => {
+        setSelectedFood(entry.food_item || null);
+        setQuantity(entry.quantity.toString() || '');
+        setDescription(entry.description || '');
+        setFoodError(null);
+        setQuantityError(null);
+        onClose();
+    }
+
     const handleFoodChange = (value: FoodItemType | null) => {
         setFoodError(null);
         setSelectedFood(value);
@@ -72,7 +81,7 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleModalClose } fullWidth maxWidth = 'sm'>
             <DialogTitle>Modify Entry ({ mealType })</DialogTitle>
 
             <DialogContent>
@@ -109,7 +118,7 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleModalClose }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }
