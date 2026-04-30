@@ -46,7 +46,6 @@ function AddCardioSetModal({ entry, open, onClose }: ModifyEntryModalProps) {
                 }
             })
         );
-
         onClose();
     };
 

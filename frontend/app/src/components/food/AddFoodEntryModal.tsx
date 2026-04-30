@@ -22,6 +22,7 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
     const [description, setDescription] = useState('');
     const [foodError, setFoodError] = useState<string | null>(null);
     const [quantityError, setQuantityError] = useState<string | null>(null);
+    const valid = !!foodLog && !!selectedFood && !!quantity && !foodError && !quantityError;
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -45,8 +46,15 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
         }
     }
 
+    const handleCloseModal = () => {
+        setSelectedFood(null);
+        setQuantity('');
+        setDescription('');
+        onClose();
+    };
+
     const handleSubmit = () => {
-        if (!foodLog || !selectedFood || !quantity || !!quantityError) { return; }
+        if (!valid) { return; }
 
         dispatch(
             createFoodEntry({
@@ -59,16 +67,11 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
                 }
             })
         );
-
-        setSelectedFood(null);
-        setQuantity('');
-        setDescription('');
-
-        onClose();
+        handleCloseModal();
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleCloseModal } fullWidth maxWidth = 'sm'>
             <DialogTitle>Add Entry ({ mealType })</DialogTitle>
 
             <DialogContent>
@@ -105,11 +108,11 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleCloseModal }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }
-                    disabled = { !selectedFood || !quantity || !!quantityError }
+                    disabled = { !valid }
                 >
                     Add Entry
                 </Button>

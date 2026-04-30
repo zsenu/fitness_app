@@ -37,6 +37,13 @@ function AddStrengthExerciseModal({ open, onClose }: AddItemModalProps) {
         setName(e.target.value);
     };
 
+    const handleCloseModal = () => {
+        setName('');
+        setDescription('');
+        setTargetMuscleGroups([]);
+        onClose();
+    } 
+
     const handleSubmit = () => {
         if (!valid) { return; }
 
@@ -47,16 +54,11 @@ function AddStrengthExerciseModal({ open, onClose }: AddItemModalProps) {
                 target_muscle_group_ids: targetMuscleGroups.map(g => g.id)
             })
         );
-
-        setName('');
-        setDescription('');
-        setTargetMuscleGroups([]);
-
-        onClose();
+        handleCloseModal();
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleCloseModal } fullWidth maxWidth = 'sm'>
             <DialogTitle>Add Strength Exercise</DialogTitle>
 
             <DialogContent>
@@ -91,7 +93,7 @@ function AddStrengthExerciseModal({ open, onClose }: AddItemModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleCloseModal }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }

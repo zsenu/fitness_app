@@ -46,6 +46,14 @@ function AddStrengthSetModal({ open, onClose }: AddEntryModalProps) {
         }
     };
 
+    const handleCloseModal = () => {
+        setSelectedExercise(null);
+        setReps('');
+        setWeight('');
+        setDescription('');
+        onClose();
+    }
+
     const handleSubmit = () => {
         if (!valid) { return; }
 
@@ -60,17 +68,11 @@ function AddStrengthSetModal({ open, onClose }: AddEntryModalProps) {
                 }
             })
         );
-
-        setSelectedExercise(null);
-        setReps('');
-        setWeight('');
-        setDescription('');
-
-        onClose();
+        handleCloseModal();
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleCloseModal } fullWidth maxWidth = 'sm'>
             <DialogTitle>Add Strength Set</DialogTitle>
 
             <DialogContent>
@@ -114,7 +116,7 @@ function AddStrengthSetModal({ open, onClose }: AddEntryModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleCloseModal }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }

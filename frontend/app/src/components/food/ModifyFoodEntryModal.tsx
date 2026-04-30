@@ -23,6 +23,7 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
     const [description, setDescription] = useState(entry.description || '');
     const [foodError, setFoodError] = useState<string | null>(null);
     const [quantityError, setQuantityError] = useState<string | null>(null);
+    const valid = !!foodLog && !!selectedFood && !!quantity && !foodError && !quantityError;
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -47,7 +48,7 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
     }
 
     const handleSubmit = () => {
-        if (!foodLog || !selectedFood || !quantity || !!quantityError) { return; }
+        if (!valid) { return; }
 
         dispatch(
             updateFoodEntry({
@@ -60,11 +61,6 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
                 }
             })
         );
-
-        setSelectedFood(null);
-        setQuantity('');
-        setDescription('');
-
         onClose();
     };
 
@@ -72,7 +68,6 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
         dispatch(deleteFoodEntry({
             entryId: entry.id
         }));
-
         onClose();
     };
 
@@ -118,7 +113,7 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }
-                    disabled = { !selectedFood || !quantity || !!quantityError }
+                    disabled = { !valid }
                 >
                     Save Entry
                 </Button>
@@ -126,7 +121,6 @@ function ModifyFoodEntryModal({ entry, open, onClose }: ModifyEntryModalProps) {
                     variant = 'contained'
                     sx = {{ backgroundColor: 'error.main' }}
                     onClick = { handleDeletion }
-                    disabled = { !selectedFood || !quantity || !!quantityError }
                 >
                     Delete Entry
                 </Button>

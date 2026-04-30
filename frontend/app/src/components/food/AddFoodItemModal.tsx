@@ -89,6 +89,15 @@ function AddFoodItemModal({ open, onClose }: AddItemModalProps) {
         setProtein(value);
     };
 
+    const handleCloseModal = () => {
+        setName('');
+        setDescription('');
+        setCalories('');
+        setFat('');
+        setCarbohydrates('');
+        setProtein('');
+        onClose();
+    };
 
     const handleSubmit = () => {
         if (!valid) { return; }
@@ -103,12 +112,11 @@ function AddFoodItemModal({ open, onClose }: AddItemModalProps) {
                 protein: protein
             })
         );
-
-        onClose();
+        handleCloseModal();
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleCloseModal } fullWidth maxWidth = 'sm'>
             <DialogTitle>Add Food Item</DialogTitle>
 
             <DialogContent>
@@ -166,7 +174,7 @@ function AddFoodItemModal({ open, onClose }: AddItemModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleCloseModal }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }

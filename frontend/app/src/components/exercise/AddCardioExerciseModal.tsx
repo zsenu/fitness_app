@@ -35,17 +35,24 @@ function AddCardioExerciseModal({ open, onClose }: AddItemModalProps) {
         setName(e.target.value);
     };
 
+    const handleCloseModal = () => {
+        setName('');
+        setDescription('');
+        setCaloriesPerMinute('');
+
+        onClose();
+    }
+
     const handleCaloriesPerMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCaloriesPerMinuteError(null);
 
         const value = e.target.value;
-        if (!(0 < Number(value) && Number(value) < 2000)) {
+        if (!(0.1 <= Number(value) && Number(value) <= 50)) {
             setCaloriesPerMinuteError('Calories burned per minute must be between 0.1 and 50.');
         }
         
         setCaloriesPerMinute(value);
     };
-
 
     const handleSubmit = () => {
         if (!valid) { return; }
@@ -58,11 +65,11 @@ function AddCardioExerciseModal({ open, onClose }: AddItemModalProps) {
             })
         );
 
-        onClose();
+        handleCloseModal();
     };
 
     return (
-        <Dialog open = { open } onClose = { onClose } fullWidth maxWidth = 'sm'>
+        <Dialog open = { open } onClose = { handleCloseModal } fullWidth maxWidth = 'sm'>
             <DialogTitle>Add Cardio Exercise</DialogTitle>
 
             <DialogContent>
@@ -95,7 +102,7 @@ function AddCardioExerciseModal({ open, onClose }: AddItemModalProps) {
             </DialogContent>
 
             <DialogActions>
-                <Button onClick = { onClose }>Cancel</Button>
+                <Button onClick = { handleCloseModal }>Cancel</Button>
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }

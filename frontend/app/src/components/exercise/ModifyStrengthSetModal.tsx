@@ -60,7 +60,6 @@ function AddStrengthSetModal({ entry, open, onClose }: ModifyEntryModalProps) {
                 }
             })
         );
-
         onClose();
     };
 
