@@ -226,3 +226,12 @@ export interface CardioLogState {
     loading: boolean;
     error: ValidationErrorResponse | null;
 }
+
+export interface StatisticsDataType {
+    elapsed_days: number;
+    strength_training_count: number;
+    cardio_training_count: number;
+    food_log_count: number;
+    health_log_count: number;
+    weight_difference: number;
+}

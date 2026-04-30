@@ -9,6 +9,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework_simplejwt.tokens      import RefreshToken
 from django.utils.decorators              import method_decorator
 from django.views.decorators.csrf         import csrf_exempt
+from django.utils                         import timezone
 
 from core.models                          import HealthLog
 from core.models                          import FoodItem,       FoodLog,          FoodEntry
@@ -118,6 +119,29 @@ class TokenRefreshView(APIView):
         access_token = serializer.validated_data['access']
         return Response({ 'access': access_token }, status = status.HTTP_200_OK)
 
+class StatisticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        strength_training_count = StrengthTraining.objects.filter(user = user).count()
+        cardio_training_count   = CardioTraining.objects.filter(user = user).count()
+        food_log_count          = FoodLog.objects.filter(user = user).count()
+        health_log_count        = HealthLog.objects.filter(user = user).count()
+
+        starting_weight = user.starting_weight
+        current_weight  = HealthLog.objects.filter(user = user).order_by('-date').first().bodyweight if health_log_count > 0 else starting_weight
+        weight_difference = current_weight - starting_weight if starting_weight is not None and current_weight is not None else 0
+
+        return Response({
+            'elapsed_days': (timezone.now().date() - user.date_joined.date()).days,
+            'strength_training_count': strength_training_count,
+            'cardio_training_count':   cardio_training_count,
+            'food_log_count':          food_log_count,
+            'health_log_count':        health_log_count,
+            'weight_difference':       weight_difference                  
+        }, status = status.HTTP_200_OK)
 """
 Health-related views
 """

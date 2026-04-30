@@ -7,6 +7,7 @@ import type { ProfileDataType } from '../interfaces/interfaces';
 import NavBar from '../components/NavBar';
 import targetCalorieCalculator from '../helpers/targetCalorieCalculator';
 import calorieBoundaryCalculator from '../helpers/calorieBoundaryCalculator';
+import StatisticsContainer from '../components/StatisticsContainer';
 
 function ProfilePage() {
 
@@ -32,7 +33,7 @@ function ProfilePage() {
     const birthDate: string | null = user?.birth_date || null;
     const height: string | null = user?.height.toString() || null;
     const currentWeight: string | null = user?.current_weight.toString() || null;
-
+            
     const validateTargetDate = (date: string): boolean => {
         const today = new Date();
         const target = new Date(date);
@@ -269,13 +270,7 @@ function ProfilePage() {
                     }
                 </Paper>
             </Container>
-            <Container maxWidth = 'sm' sx = {{ mt: 6 }}>
-                <Paper sx = {{ p: 4 }}>
-                    <Typography variant = 'h4' gutterBottom>
-                        Statistics
-                    </Typography>
-                </Paper>
-            </Container>
+            <StatisticsContainer />
         </>
     );
 };
