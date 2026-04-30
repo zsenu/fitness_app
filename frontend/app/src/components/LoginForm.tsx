@@ -24,7 +24,7 @@ function LoginForm() {
                 navigate('/dashboard');
             }
             else if (login.rejected.match(result)) {
-                setLoginError(result.payload || 'Login failed.');
+                setLoginError(result.payload!['detail'].toString() || 'Login failed.');
             }
         }
         catch (error: unknown) {

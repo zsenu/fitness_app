@@ -34,7 +34,7 @@ export const fetchUserProfile = createAsyncThunk<
 export const login = createAsyncThunk<
     { access: string; profile: ProfileDataType }, 
     LoginDataType,
-    { rejectValue: string }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/login',
     async (
