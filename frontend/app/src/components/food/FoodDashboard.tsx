@@ -96,19 +96,19 @@ function FoodDashboard() {
                         <Typography variant = 'h6'>Total</Typography>
                         <MacrosDisplay macros = { foodLog.total_macros } />
                     </Box>
-                    <Button
-                        onClick = {() => setOpen(true)}
-                        variant = 'contained'
-                        sx = {{
-                            backgroundColor: '#6b5b4c',
-                            color: 'white',
-                            alignSelf: 'center'
-                        }}
-                    >
-                        Add Food Item
-                    </Button>
                 </>
             )}
+            <Button
+                onClick = {() => setOpen(true)}
+                variant = 'contained'
+                sx = {{
+                    backgroundColor: '#6b5b4c',
+                    color: 'white',
+                    alignSelf: 'center'
+                }}
+            >
+                Add Food Item
+            </Button>
         </Box>
     );
 }
