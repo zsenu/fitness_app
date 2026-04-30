@@ -269,6 +269,13 @@ function ProfilePage() {
                     }
                 </Paper>
             </Container>
+            <Container maxWidth = 'sm' sx = {{ mt: 6 }}>
+                <Paper sx = {{ p: 4 }}>
+                    <Typography variant = 'h4' gutterBottom>
+                        Statistics
+                    </Typography>
+                </Paper>
+            </Container>
         </>
     );
 };

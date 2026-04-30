@@ -19,9 +19,12 @@ function FoodDashboard() {
 
     const userProfile = useSelector((state: RootState) => state.auth.userProfile);
     const targetCalories = userProfile ? userProfile.target_calories : 0;
-
-    const calorieDifference = targetCalories - foodLog!.total_macros.calories;
-    const isUnderTarget = calorieDifference >= 0;
+    let calorieDifference: number = 0;
+    let isUnderTarget: boolean | null = null;
+    if (foodLog) {
+        calorieDifference = targetCalories - foodLog.total_macros.calories;
+        isUnderTarget = calorieDifference >= 0;
+    }
 
     return (
         <Box
