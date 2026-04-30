@@ -29,7 +29,7 @@ function AboutPage() {
                 </Typography>
                 <Typography>
                     A calorie is a measure of energy. Your body uses a lot of energy
-                    every day, to heat itself up, to circulate blood, move your legs, digest food,
+                    every day, to heat itself up, to circulate blood, move your legs, digest food.
                     <br />
                     The exact amount of energy your body needs in order to survive is called the <strong>Basal Metabolic Rate (BMR)</strong>.
                     It's influenced by many factors, including your gender, age, height and bodyweight.
