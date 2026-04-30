@@ -4,15 +4,17 @@ import type { FoodItemType, ValidationErrorResponse } from '../../interfaces/int
 
 export const fetchAllFoodItems = createAsyncThunk<
     FoodItemType[],
-    string,
+    void,
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
-    'foodLog/fetchByDate',
-    async (date, { getState, rejectWithValue }) => {
+    'foodItem/fetchAll',
+    async (_, { getState, rejectWithValue }) => {
         const token = getState().auth.accessToken;
 
-        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/food-logs/date/${ date }/`, {
+        const response = await fetch(`${ process.env.DJANGO_BACKEND_URL }/food-items/`, {
+            method: 'GET',
             headers: {
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${ token }`
             }
         });
@@ -32,7 +34,7 @@ export const createFoodItem = createAsyncThunk<
     Omit<FoodItemType, 'id'>,
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
-    'foodLog/create',
+    'foodItem/create',
     async (data, { getState, rejectWithValue }) => {
         const token = getState().auth.accessToken;
 

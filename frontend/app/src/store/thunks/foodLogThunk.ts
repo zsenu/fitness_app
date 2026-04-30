@@ -100,7 +100,7 @@ export const createFoodEntry = createAsyncThunk<
 
 export const updateFoodEntry = createAsyncThunk<
     void,
-    { logId: number; entryId: number; data: FoodEntryPayloadType },
+    { entryId: number; data: FoodEntryPayloadType },
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
     'foodLog/updateEntry',
@@ -128,7 +128,7 @@ export const updateFoodEntry = createAsyncThunk<
 
 export const deleteFoodEntry = createAsyncThunk<
     void,
-    { logId: number; entryId: number },
+    { entryId: number },
     { state: RootState, rejectValue: ValidationErrorResponse }
 >(
     'foodLog/deleteEntry',

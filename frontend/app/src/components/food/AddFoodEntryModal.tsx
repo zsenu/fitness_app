@@ -4,9 +4,9 @@ import { Autocomplete } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import type { AppDispatch, RootState } from '../store/store';
-import type { FoodItemType, MealType } from '../interfaces/interfaces';
-import { createFoodEntry } from '../store/thunks/foodLogThunk';
+import type { AppDispatch, RootState } from '../../store/store';
+import type { FoodItemType, MealType } from '../../interfaces/interfaces';
+import { createFoodEntry } from '../../store/thunks/foodLogThunk';
 
 type AddEntryModalProps = {
     open: boolean;
@@ -17,19 +17,37 @@ type AddEntryModalProps = {
 function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
     const dispatch = useDispatch<AppDispatch>();
     const foodLog = useSelector((state: RootState) => state.foodLog.activeLog);
-
+    const foodItems = useSelector((state: RootState) => state.foodItem.foodItems);
     const [selectedFood, setSelectedFood] = useState<FoodItemType | null>(null);
     const [quantity, setQuantity] = useState('');
     const [description, setDescription] = useState('');
+    const [foodError, setFoodError] = useState<string | null>(null);
+    const [quantityError, setQuantityError] = useState<string | null>(null);
 
-    // TODO: replace with real API data
-    const foodOptions: FoodItemType[] = [
-        { id: 1, name: 'Apple', description: '', calories: '52', fat: '0.2', carbohydrates: '14', protein: '0.3' },
-        { id: 2, name: 'Chicken Breast', description: '', calories: '165', fat: '3.6', carbohydrates: '0', protein: '31' }
-    ];
+    const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setQuantity(value);
+        setQuantityError(null);
+
+        if (Number(value) < 0.1) {
+            setQuantityError('Quantity must be at least 0.1 grams');
+            return;
+        }
+    };
+
+    const handleFoodChange = (value: FoodItemType | null) => {
+        setFoodError(null);
+        setSelectedFood(value);
+        if (!foodLog || !value) { return; }
+        const present_foods = (foodLog.entries.filter(entry => entry.meal_type === mealType).map(entry => entry.food_item.id));
+        
+        if (present_foods.includes(Number(value.id))) {
+            setFoodError('This food item has already been added for this meal type');
+        }
+    }
 
     const handleSubmit = () => {
-        if (!foodLog || !selectedFood || !quantity) { return; }
+        if (!foodLog || !selectedFood || !quantity || !!quantityError) { return; }
 
         dispatch(
             createFoodEntry({
@@ -58,20 +76,23 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
                 <Box sx = {{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
 
                     <Autocomplete
-                        options = { foodOptions }
-                        getOptionLabel = {(option) => option.name}
+                        options = { foodItems }
+                        getOptionLabel = {(option) => option.name + (option.description ? ` - ${option.description}` : '')}
                         value = { selectedFood }
-                        onChange = {(_, value) => setSelectedFood(value)}
+                        onChange = {(_, value) => handleFoodChange(value)}
                         renderInput = {(params) => (
                             <TextField { ...params } label = 'Food Item' />
                         )}
                     />
+                    { !!foodError && <Box sx = {{ color: 'error.main' }}>{ foodError }</Box> }
 
                     <TextField
                         label = 'Quantity (grams)'
                         type = 'number'
                         value = { quantity }
-                        onChange = {(e) => setQuantity(e.target.value)}
+                        onChange = { handleQuantityChange }
+                        error = { !!quantityError }
+                        helperText = { quantityError }
                     />
 
                     <TextField
@@ -89,7 +110,7 @@ function AddFoodEntryModal({ open, onClose, mealType }: AddEntryModalProps) {
                 <Button
                     variant = 'contained'
                     onClick = { handleSubmit }
-                    disabled = { !selectedFood || !quantity }
+                    disabled = { !selectedFood || !quantity || !!quantityError }
                 >
                     Add Entry
                 </Button>

@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import type { MacrosType } from '../interfaces/interfaces';
+import type { MacrosType } from '../../interfaces/interfaces';
 
 type MacrosDisplayProps = {
     macros: MacrosType;

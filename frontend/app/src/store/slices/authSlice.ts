@@ -27,7 +27,9 @@ const authSlice = createSlice({
             })
             .addCase(fetchUserProfile.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload?.detail as string;
+                state.error = action.payload || {
+                    non_field_errors: ['Unknown error']
+                };
             })
 
             // LOGIN
@@ -43,7 +45,9 @@ const authSlice = createSlice({
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload?.detail as string;
+                state.error = action.payload || {
+                    non_field_errors: ['Unknown error']
+                };
             })
             
             // LOGOUT
@@ -59,7 +63,9 @@ const authSlice = createSlice({
             })
             .addCase(logout.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                state.error = action.payload || {
+                    non_field_errors: ['Unknown error']
+                };
             })
 
             // REGISTER
@@ -75,7 +81,9 @@ const authSlice = createSlice({
             })
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload?.detail as string;
+                state.error = action.payload || {
+                    non_field_errors: ['Unknown error']
+                };
             })
 
             // BOOTSTRAP USER

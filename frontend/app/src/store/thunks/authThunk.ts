@@ -1,11 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
-import type { ErrorResponse, ValidationErrorResponse, LoginDataType, RegisterDataType, ProfileDataType } from '../../interfaces/interfaces';
+import type { ValidationErrorResponse, LoginDataType, RegisterDataType, ProfileDataType } from '../../interfaces/interfaces';
 
 export const fetchUserProfile = createAsyncThunk<
     { profile: ProfileDataType },
     void,
-    { rejectValue: ErrorResponse }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/fetchUserProfile',
     async (
@@ -23,7 +23,7 @@ export const fetchUserProfile = createAsyncThunk<
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch user profile.');
+            return thunkAPI.rejectWithValue({ non_field_errors: ['Failed to fetch user profile.'] });
         }
 
         const profile: ProfileDataType = await response.json();
@@ -34,7 +34,7 @@ export const fetchUserProfile = createAsyncThunk<
 export const login = createAsyncThunk<
     { access: string; profile: ProfileDataType }, 
     LoginDataType,
-    { rejectValue: ErrorResponse }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/login',
     async (
@@ -51,7 +51,7 @@ export const login = createAsyncThunk<
         });
 
         if (!loginResponse.ok) {
-            const errorData: ErrorResponse = await loginResponse.json();
+            const errorData: ValidationErrorResponse = await loginResponse.json();
             return thunkAPI.rejectWithValue(errorData);
         }
 
@@ -66,7 +66,10 @@ export const login = createAsyncThunk<
             }
         });
 
-        if (!profileResponse.ok) { throw new Error('Failed to fetch user profile.'); }
+        if (!profileResponse.ok) {
+            const errorData: ValidationErrorResponse = await profileResponse.json();
+            return thunkAPI.rejectWithValue(errorData);
+        }
         const profileData = await profileResponse.json();
 
         return { access: token, profile: profileData };
@@ -76,7 +79,7 @@ export const login = createAsyncThunk<
 export const logout = createAsyncThunk<
     boolean,
     void,
-    { rejectValue: string }
+    { rejectValue: ValidationErrorResponse }
 >
 (
     'auth/logout',
@@ -96,7 +99,10 @@ export const logout = createAsyncThunk<
             }
         });
 
-        if (!response.ok) { throw new Error('Logout failed.'); }
+        if (!response.ok) {
+            const errorData: ValidationErrorResponse = await response.json();
+            return thunkAPI.rejectWithValue(errorData);
+        }
         return true;
     }
 );
@@ -104,7 +110,7 @@ export const logout = createAsyncThunk<
 export const register = createAsyncThunk<
     { access: string; profile: ProfileDataType }, 
     RegisterDataType,
-    { rejectValue: ValidationErrorResponse | ErrorResponse }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/registerUser',
     async (
@@ -135,7 +141,7 @@ export const register = createAsyncThunk<
         });
 
         if (!loginResponse.ok) {
-            const loginEerrorData: ErrorResponse = await loginResponse.json();
+            const loginEerrorData: ValidationErrorResponse = await loginResponse.json();
             return thunkAPI.rejectWithValue(loginEerrorData);
         }
 
@@ -150,7 +156,10 @@ export const register = createAsyncThunk<
             }
         });
 
-        if (!profileResponse.ok) { throw new Error('Failed to fetch user profile.'); }
+        if (!profileResponse.ok) {
+            const profileErrorData: ValidationErrorResponse = await profileResponse.json();
+            return thunkAPI.rejectWithValue(profileErrorData);
+        }
         const profileData = await profileResponse.json();
 
         return { access: token, profile: profileData };
@@ -160,7 +169,7 @@ export const register = createAsyncThunk<
 export const refreshToken = createAsyncThunk<
     { access: string },
     void,
-    { rejectValue: ErrorResponse }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/refreshToken',
     async (
@@ -176,7 +185,7 @@ export const refreshToken = createAsyncThunk<
         });
 
         if (!response.ok) {
-            return thunkAPI.rejectWithValue({ detail: 'Refresh failed' });
+            return thunkAPI.rejectWithValue({ non_field_errors: ['Refresh failed'] });
         }
 
         const data = await response.json();
@@ -188,11 +197,11 @@ export const refreshToken = createAsyncThunk<
 export const bootstrapAuth = createAsyncThunk<
     { access: string; profile: ProfileDataType },
     void,
-    { rejectValue: ErrorResponse }
+    { rejectValue: ValidationErrorResponse }
 >(
     'auth/bootstrap',
     async (_, thunkAPI) => {
-        const refreshRes = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/refresh/`, {
+        const refreshResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/auth/refresh/`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -200,11 +209,11 @@ export const bootstrapAuth = createAsyncThunk<
             }
         });
 
-        if (!refreshRes.ok) {
-            return thunkAPI.rejectWithValue({ detail: 'No valid session.'});
+        if (!refreshResponse.ok) {
+            return thunkAPI.rejectWithValue({ non_field_errors: ['No valid session.']});
         }
 
-        const refreshData = await refreshRes.json();
+        const refreshData = await refreshResponse.json();
         const token = refreshData.access;
 
         const profileResponse = await fetch(`${ process.env.DJANGO_BACKEND_URL }/profiles/me/`, {
@@ -216,7 +225,7 @@ export const bootstrapAuth = createAsyncThunk<
         });
 
         if (!profileResponse.ok) {
-            return thunkAPI.rejectWithValue({ detail: 'Failed to load user' });
+            return thunkAPI.rejectWithValue({ non_field_errors: ['Failed to load user'] });
         }
 
         const profile = await profileResponse.json();

@@ -2,7 +2,7 @@ import { Container, Grid } from '@mui/material';
 import NavBar from '../components/NavBar';
 import DateSelector from '../components/DateSelector';
 import ExerciseDashboard from '../components/ExerciseDashboard';
-import FoodDashboard from '../components/FoodDashboard';
+import FoodDashboard from '../components/food/FoodDashboard';
 import HealthDashboard from '../components/HealthDashboard';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,17 +10,17 @@ import type { AppDispatch, RootState } from '../store/store';
 import { fetchHealthLogByDate } from '../store/thunks/healthLogThunk';
 import { fetchUserProfile } from '../store/thunks/authThunk';
 import { fetchFoodLogByDate } from '../store/thunks/foodLogThunk';
+import { fetchAllFoodItems } from '../store/thunks/foodItemThunk';
 
 export default function DashboardPage() {
 
     const dispatch = useDispatch<AppDispatch>();
     const activeDate = useSelector((state: RootState) => state.dashboard.activeDate);
     const activeHealthLog = useSelector((state: RootState) => state.healthLog.activeLog);
-    const activeFoodLog = useSelector((state: RootState) => state.foodLog.activeLog);
-    
+
     useEffect(() => {
-        console.log('Active Food Log:', activeFoodLog);
-    }, [activeFoodLog, activeDate]);
+        dispatch(fetchAllFoodItems());
+    }, [dispatch]);
 
     useEffect(() => {
         dispatch(fetchHealthLogByDate(activeDate));

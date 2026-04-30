@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Box, Typography, Divider, Button } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '../store/store';
-import type { MealType, FoodEntryType, MacrosType } from '../interfaces/interfaces';
+import type { RootState, AppDispatch } from '../../store/store.ts';
+import type { MealType, FoodEntryType, MacrosType } from '../../interfaces/interfaces.ts';
 import MealSection from './MealSelection.tsx';
 import MacrosDisplay from './MacrosDisplay.tsx';
-import { createFoodLog } from '../store/thunks/foodLogThunk.ts';
+import { createFoodLog } from '../../store/thunks/foodLogThunk.ts';
+import AddFoodItemModal from './AddFoodItemModal.tsx';
 
 const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'misc'];
 
@@ -12,6 +14,8 @@ function FoodDashboard() {
     const foodLog = useSelector((state: RootState) => state.foodLog.activeLog);
     const activeDate = useSelector((state: RootState) => state.dashboard.activeDate);
     const dispatch = useDispatch<AppDispatch>();
+
+    const [open, setOpen] = useState(false);
 
     return (
         <Box
@@ -25,6 +29,10 @@ function FoodDashboard() {
                 gap: 2
             }}
         >
+            <AddFoodItemModal
+                open = { open }
+                onClose = {() => setOpen(false)}
+            />
             <Box
                 sx = {{
                     display: 'flex',
@@ -88,6 +96,17 @@ function FoodDashboard() {
                         <Typography variant = 'h6'>Total</Typography>
                         <MacrosDisplay macros = { foodLog.total_macros } />
                     </Box>
+                    <Button
+                        onClick = {() => setOpen(true)}
+                        variant = 'contained'
+                        sx = {{
+                            backgroundColor: '#6b5b4c',
+                            color: 'white',
+                            alignSelf: 'center'
+                        }}
+                    >
+                        Add Food Item
+                    </Button>
                 </>
             )}
         </Box>

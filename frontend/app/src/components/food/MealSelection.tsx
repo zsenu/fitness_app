@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import type { FoodEntryType, MacrosType, MealType } from '../interfaces/interfaces';
+import type { FoodEntryType, MacrosType, MealType } from '../../interfaces/interfaces.ts';
 import MacrosDisplay from './MacrosDisplay.tsx';
-import EntryRow from './EntryRow.tsx';
+import FoodEntryRow from './FoodEntryRow.tsx';
 import AddFoodEntryModal from './AddFoodEntryModal.tsx';
 
 type MealSectionProps = {
@@ -12,7 +12,7 @@ type MealSectionProps = {
     macros: MacrosType;
 };
 
-function MealSection({ title, mealType, entries, macros }: MealSectionProps) {
+function MealSection({ title, mealType, entries, macros, }: MealSectionProps) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -51,7 +51,7 @@ function MealSection({ title, mealType, entries, macros }: MealSectionProps) {
                     <Typography variant = 'body2'>No entries</Typography>
                 ) : (
                     entries.map((entry) => (
-                        <EntryRow key = { entry.id } entry = { entry } />
+                        <FoodEntryRow key = { entry.id } entry = { entry } />
                     ))
                 )}
             </Box>

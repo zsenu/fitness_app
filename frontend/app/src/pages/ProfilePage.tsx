@@ -20,6 +20,7 @@ function ProfilePage() {
     const [targetWeight, setTargetWeight] = useState<string>(user?.target_weight.toString() || '');
     const [targetDate, setTargetDate] = useState<string>(user?.target_date || '');
     const [targetCalories, setTargetCalories] = useState<string>(user?.target_calories.toString() || '');
+    const [errors, setErrors] = useState<Record<string, string[]> | null>(null);
     const isEditing = (
         activityLevel !== user?.activity_level ||
         Number(targetWeight) !== Number(user?.target_weight) ||
@@ -85,11 +86,10 @@ function ProfilePage() {
 
     const handleSaveChanges = async () => {
         if (!token) {
-            alert('Authorization error. Try logging in again.');
+            setErrors({ non_field_errors: ['No authorization token found.'] });
             return;
         }
-        const API_BASE = process.env.DJANGO_BACKEND_URL;
-        const endpoint = `${API_BASE}/profiles/me/`;
+        const endpoint = `${ process.env.DJANGO_BACKEND_URL }/profiles/me/`;
         const body = {
             activity_level: activityLevel,
             target_weight: Number(targetWeight),
@@ -97,34 +97,25 @@ function ProfilePage() {
             target_calories: Number(targetCalories)
         };
 
-        try {
-            setIsSaving(true);
-            const response = await fetch(endpoint, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${ token }`
-                },
-                body: JSON.stringify(body)
-            });
+        setIsSaving(true);
+        const response = await fetch(endpoint, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${ token }`
+            },
+            body: JSON.stringify(body)
+        });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error:', errorData);
-                alert('Failed to save changes. Please try again.');
-                return;
-            }
-
-            alert('Changes saved successfully!');
-            dispatch(fetchUserProfile());
-        }
-        catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while saving changes. Please try again.');
-        }
-        finally {
+        if (!response.ok) {
+            const errorData = await response.json();
+            setErrors(errorData);
             setIsSaving(false);
+            return;
         }
+
+        dispatch(fetchUserProfile());
+        setIsSaving(false);
     };
 
     if (!user) {
@@ -185,10 +176,13 @@ function ProfilePage() {
                             select
                             label = 'Activity Level'
                             value = { activityLevel }
-                            onChange = {(e) =>
-                                setActivityLevel(e.target.value)
-                            }
+                            onChange = {(e) => {
+                                setErrors(null);
+                                setActivityLevel(e.target.value);
+                            }}
                             fullWidth
+                            error = { !!errors?.activity_level }
+                            helperText = { errors?.activity_level ? errors.activity_level.join(' ') : '' }
                         >
                             <MenuItem value = 'sedentary'>Sedentary (little or no exercise)</MenuItem>
                             <MenuItem value = 'lightly_active'>Lightly active (light exercise/sports 1-3 days/week)</MenuItem>
@@ -201,33 +195,43 @@ function ProfilePage() {
                             type = 'number'
                             value = { targetWeight }
                             onChange = {(e) =>
+                            {
+                                setErrors(null);
                                 setTargetWeight(e.target.value)
-                            }
+                            }}
                             onBlur = {() => {
                                 if (targetWeight) {
                                     setTargetWeight(Number(targetWeight).toFixed(2));
                                 }
                             }}
                             fullWidth
+                            error = { !!errors?.target_weight }
+                            helperText = { errors?.target_weight ? errors.target_weight.join(' ') : '' }
                         />
                         <TextField
                             label = 'Target Date'
                             type = 'date'
                             value = { targetDate }
-                            onChange = {(e) =>
+                            onChange = {(e) => {
+                                setErrors(null);
                                 setTargetDate(e.target.value)
-                            }
+                            }}
                             slotProps = {{ inputLabel: { shrink: true } }}
                             fullWidth
+                            error = { !!errors?.target_date }
+                            helperText = { errors?.target_date ? errors.target_date.join(' ') : '' }
                         />
                         <TextField
                             label = 'Target Calories'
                             type = 'number'
                             value = { targetCalories }
-                            onChange = {(e) =>
+                            onChange = {(e) => {
+                                setErrors(null);
                                 setTargetCalories(e.target.value)
-                            }
+                            }}
                             fullWidth
+                            error = { !!errors?.target_calories }
+                            helperText = { errors?.target_calories ? errors.target_calories.join(' ') : '' }
                         />
                         { calculatedCalories !== null &&
                             <Typography>
@@ -252,6 +256,11 @@ function ProfilePage() {
                             disabled
                         />
                     </Stack>
+                    { errors?.non_field_errors &&
+                        <Typography color = 'error' sx = {{ mt: 2 }}>
+                            { errors.non_field_errors.join(' ') }
+                        </Typography>
+                    }
                     {
                         isEditing &&
                         <Button variant = 'contained' sx = {{ mt: 3 }} onClick = { handleSaveChanges } disabled = { isSaving }>

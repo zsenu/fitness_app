@@ -131,7 +131,6 @@ function RegisterForm() {
                     const errorPayload = resultAction.payload;
                     if (errorPayload) {
                         Object.entries(errorPayload).forEach(([field, messages]) => {
-                            console.log(`Field: ${ field }, Messages: ${ messages }`);
                             if (field in newErrors) {
                                 newErrors[field as keyof typeof newErrors] = (messages as string[]).join(' ');
                             }
