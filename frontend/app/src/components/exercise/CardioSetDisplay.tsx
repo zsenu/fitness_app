@@ -29,7 +29,7 @@ function CardioSetDisplay() {
                     alignItems: 'center'
                 }}
             >
-                <Typography variant = 'h6'>Cardio exercises</Typography>
+                <Typography variant = 'h6'>Cardio sets</Typography>
 
                 <Button
                     size = 'small'

@@ -29,7 +29,7 @@ function StrengthSetDisplay() {
                     alignItems: 'center'
                 }}
             >
-                <Typography variant = 'h6'>Strength exercises</Typography>
+                <Typography variant = 'h6'>Strength sets</Typography>
 
                 <Button
                     size = 'small'
