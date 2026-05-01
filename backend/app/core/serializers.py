@@ -198,7 +198,6 @@ class FoodEntrySerializer(FullValidationMixin):
         context_fields = ['parent_log']
 
     def create(self, validated_data):
-        print('hello')
         try:
             return super().create(validated_data)
         except DjangoValidationError as e:
